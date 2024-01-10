@@ -1,5 +1,6 @@
 from typing import Callable
 from pygls.server import LanguageServer
+import webbrowser
 from lsprotocol.types import (
     Range,
     Position,
@@ -14,6 +15,7 @@ from lsprotocol.types import (
     CodeActionParams,
     TEXT_DOCUMENT_COMPLETION,
     CompletionItem,
+    CompletionItemKind,
     CompletionList,
     CompletionParams,
 )
@@ -48,6 +50,7 @@ class Ideas:
         self.line_edits = line_edits
         assert kind in CodeActionKind, f"Parameter 'kind' must be in the enum `lsprotocol.types.CodeActionKind`, you passed '{kind}'."
         self.kind = kind
+        
         @server.feature(
             TEXT_DOCUMENT_CODE_ACTION,
             CodeActionOptions(code_action_kinds=[kind]),
@@ -62,10 +65,10 @@ class Ideas:
             Returns:
             List[CodeAction]: The list of code action items.
             """
+            items = []
             for line_edit in self.line_edits:
-                items = self.idea(params, line_edit)
-                if len(items) != 0:
-                    return items
+                items += self.idea(params, line_edit)
+            return items
         self.check_all = check_all
 
 
@@ -128,32 +131,29 @@ class Completion:
 
         @server.feature(TEXT_DOCUMENT_COMPLETION)
         def check_all(params: CodeAction) -> CompletionList:
-            """
-            Callback function for text document completion feature.
-
-            Parameters:
-            - params (CodeAction): The parameters containing information about the completion request.
-
-            Returns:
-            CompletionList: The list of completion items.
-            """
-            
             document = server.workspace.get_document(params.text_document.uri)
             current_line = document.lines[params.position.line].strip()
             start_line = params.position.line
             range_ = Range(
                 start=Position(line=start_line, character=0),
-                end=Position(line=start_line, character=len(current_line) - 1),
+                end=Position(line=start_line, character=len(current_line)),
             )
             items = self.complete(current_line)
+            new_items = []
             if items:
                 for item in items.items:
-                    print(items.items)
-                    text_edit = TextEdit(range=range_, new_text=current_line+item.label)
+
+                    # Use the correct character offset for TextEdit
+                    text_edit = TextEdit(
+                        range=range_,
+                        new_text=current_line + item.label
+                    )
                     item.text_edit = text_edit
-            return items
-        
+                    item.kind = CompletionItemKind.Keyword
+                return items
+            return None
         self.check_all = check_all
+
 
     def complete(self, line:str) -> CompletionList:
         """
@@ -174,7 +174,7 @@ class Completion:
                 if len(items) != 0 and self.call_only_until_first_valid:
                     break
         if items:
-            return CompletionList(is_incomplete=False, items=items)
+            return CompletionList(is_incomplete=True, items=items)
         else:
             return None
     

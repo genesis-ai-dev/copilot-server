@@ -16,12 +16,8 @@
             "scheme": "file",
             "language": "plaintext"
         },
-        {
-            "scheme": "file",
-            "language": "jupyter"
-        }
     ],
 
-    "pygls.server.cwd": "C:\\Users\\danie\\OneDrive\\Desktop\\langserver\\servers"
+    "pygls.server.cwd": "${workspaceFolder}/servers"
     // "pygls.jsonServer.exampleConfiguration": "some value here",
 }

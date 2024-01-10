@@ -20,13 +20,17 @@ def check2(text: str) -> Union[dict, bool]:
         return line_edit
     else:
         return False
+    
+
 
 def completion1(text: str):
     if text.endswith("The"):
-        return [" quick brown fox jumps over the lazy dog!", " end.", " other"]
+        return [" test", " other"]
 
 base_actions.Ideas(server, line_edits=[check1, check2])
+
 base_actions.Completion(server, [completion1])
+
 
 if __name__ == "__main__":
     print('running:')
