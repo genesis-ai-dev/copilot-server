@@ -1,6 +1,24 @@
 # Python Language Server for vscode (so far)
 This VSCode extension provides a Language Server written in Python. It includes code actions that can suggest edits and provide autocompletion for text documents within the VSCode environment. Lots more will added on top of this, but for a start this seems helpful.
 
+## Development Setup
+
+To contribute to this extension, clone the repository, and ensure you have the necessary dependencies installed:
+
+1. Ensure you have the Python extention for vscode.
+2. Clone this repo:
+```bash
+git clone https://github.com/dadukhankevin/Language-Server-for-Translation
+```
+2. Install the required Python packages:
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Implement additional checks or completion functions as needed.
+4. Add your functions to the respective `Ideas` or `Completion` class instances.
+
 ## Features
 
 - **Actions**: Suggests edits for lines that do not meet certain criteria (e.g., mentioning specific words or phrases).
@@ -62,24 +80,6 @@ This class handles autocompletion features. It accepts a list of functions that 
 ### `LineEdit`
 
 This helper class represents a suggested edit. It contains a message that describes the suggestion and the actual edit to be applied to the text.
-
-## Development Setup
-
-To contribute to this extension, clone the repository, and ensure you have the necessary dependencies installed:
-
-1. Ensure you have the Python extention for vscode.
-2. Clone this repo:
-```bash
-git clone https://github.com/dadukhankevin/Language-Server-for-Translation
-```
-2. Install the required Python packages:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Implement additional checks or completion functions as needed.
-4. Add your functions to the respective `Ideas` or `Completion` class instances.
 
 ## Running the Language Server
 
