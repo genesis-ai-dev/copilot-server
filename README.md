@@ -85,7 +85,7 @@ This helper class represents a suggested edit. It contains a message that descri
 
 To run the vscode extiontion, **make sure you are in the correct workspace**, and then press `fn+f5` (or whatever is used on your OS).
 
-The server should start up, if not most errors seem to come from accidentally being in the wrong workspace (this is easy to accidentally do as the extention will open its own vscode instace which will look similar to the one you start in).
+The server should start up, if not most errors seem to come from accidentally being in the wrong workspace (this is easy to accidentally do as the extention will open its own vscode instance which will look similar to the one you start in).
 
 ## TODO:
 (no specific order)
