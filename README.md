@@ -68,15 +68,46 @@ base_actions.Completion(server, [completion1, my_custom_completion])
 ```
 
 ## Classes
+## `Ideas`
 
-### `Ideas`
+The `Ideas` class is designed to manage and provide code actions. It evaluates text against a set of provided functions to suggest potential edits to improve the translation or to enforce specific guidelines.
 
-This class is responsible for providing code actions. When initialized, it takes a list of functions that suggest edits and registers a callback to the code action feature of the Language Server Protocol.
+### Initialization:
 
-### `Completion`
+```python
+Ideas(server: LanguageServer, line_edits: list[Callable], kind: CodeActionKind = CodeActionKind.RefactorInline)
+```
 
-This class handles autocompletion features. It accepts a list of functions that provide completion suggestions and registers a callback to the completion feature of the Language Server Protocol.
+#### Parameters:
 
+- `server` (`LanguageServer`): The LanguageServer instance that enables interaction with the client's language features.
+- `line_edits` (`list[Callable]`): A list of functions that the server will use to check each line within the provided range for potential edits. Each function should accept a single `str` argument representing the line of text and return either a `LineEdit` object with suggested changes or `False` if no change is suggested.
+- `kind` (`CodeActionKind`, optional): Specifies the kind of code action to be returned. Defaults to `CodeActionKind.RefactorInline`.
+
+### Methods:
+
+- `idea(params: CodeActionParams, line_edit: Callable) -> List[CodeAction]`: Generates code actions for the provided text range based on the given line edit function.
+
+## `Completion`
+
+The `Completion` class handles autocompletion suggestions. It calls a list of functions that return potential completions based on the current text context.
+
+### Initialization:
+
+```python
+Completion(server: LanguageServer, completion_functions: list[Callable], call_only_until_first_valid: bool = False)
+```
+
+#### Parameters:
+
+- `server` (`LanguageServer`): The LanguageServer instance that enables interaction with the client's language features.
+- `completion_functions` (`list[Callable]`): A list of functions that provide completion suggestions. Each function should accept a `str` argument representing the current line and return a list of `str` with suggested completions.
+- `call_only_until_first_valid` (`bool`, optional): If set to `True`, the completion process will stop after the first function returns a non-empty list of suggestions. Defaults to `False`.
+
+### Methods:
+
+- `complete(line: str) -> CompletionList`: Calls each function in `completion_functions` with the current line as the argument and aggregates the results into a `CompletionList`.
+- `debug(line: str)`: A utility method for debugging that prints the labels of completion items for the given line.
 ### `LineEdit`
 
 This helper class represents a suggested edit. It contains a message that describes the suggestion and the actual edit to be applied to the text.
