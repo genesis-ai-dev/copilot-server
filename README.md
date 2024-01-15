@@ -1,4 +1,4 @@
-# Python Language Server for vscode (so far)
+# Copilot Server
 This VSCode extension provides a Language Server written in Python. It includes code actions that can suggest edits and provide autocompletion for text documents within the VSCode environment. Lots more will added on top of this, but for a start this seems helpful.
 ## Install needed extensions:
 1. Install Pylance and Python from the Microsoft vscode extension store.
@@ -161,10 +161,12 @@ The server should start up, if not most errors seem to come from accidentally be
 
 ## TODO:
 (no specific order)
-- Add Wildebeest
-- `.codex` and `.scripture` support etc...
+- Add Wildebeest (starting)
+- `.codex` and `.scripture` support etc... (mostly done, but each function should define which it applies to)
 - Extend language server beyond autocomplete and code actions...
+
 - Look into [pygls async usage](https://pygls.readthedocs.io/en/v0.11.2/pages/advanced_usage.html#asynchronous-functions-coroutines) and [pygls threading](https://pygls.readthedocs.io/en/v0.11.2/pages/advanced_usage.html#threaded-functions) where they might be helpful to make the experience smoother (e.g waiting for an LLM to generate a token shouldn't block the rest of the server...)
-- Modify `/servers/workspace` to adhere to whatever structure we want our projects to use.
+
+- Modify `/servers/workspace` to adhere to whatever structure we want our projects to use. (good for now)
 - Linguistic anomaly detection...
 - Add more to the TODO...
