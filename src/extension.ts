@@ -18,15 +18,19 @@
  * ----------------------------------------------------------------------- */
 "use strict";
 
+
 import * as net from "net";
 import * as path from "path";
 import * as vscode from "vscode";
 import * as semver from "semver";
 
+
 import { PythonExtension } from "@vscode/python-extension";
 import { LanguageClient, LanguageClientOptions, ServerOptions, State, integer } from "vscode-languageclient/node";
 
+
 const MIN_PYTHON = semver.parse("3.7.9")
+
 
 // Some other nice to haves.
 // TODO: Check selected env satisfies pygls' requirements - if not offer to run the select env command.
@@ -34,24 +38,28 @@ const MIN_PYTHON = semver.parse("3.7.9")
 // TODO: WS Transport
 // TODO: Web Extension support (requires WASM-WASI!)
 
+
 let client: LanguageClient;
 let clientStarting = false
 let python: PythonExtension;
 let logger: vscode.LogOutputChannel
+
 
 /**
  * This is the main entry point.
  * Called when vscode first activates the extension
  */
 export async function activate(context: vscode.ExtensionContext) {
-    
+   
     logger = vscode.window.createOutputChannel('pygls', { log: true })
     logger.info("Extension activated.")
+
 
     await getPythonExtension();
     if (!python) {
         return
     }
+
 
     // Restart language server command
     context.subscriptions.push(
@@ -61,12 +69,14 @@ export async function activate(context: vscode.ExtensionContext) {
         })
     )
 
+
     // Execute command... command
     context.subscriptions.push(
         vscode.commands.registerCommand("pygls.server.executeCommand", async () => {
             await executeServerCommand()
         })
     )
+
 
     // Restart the language server if the user switches Python envs...
     context.subscriptions.push(
@@ -75,6 +85,7 @@ export async function activate(context: vscode.ExtensionContext) {
             await startLangServer()
         })
     )
+
 
     // ... or if they change a relevant config option
     context.subscriptions.push(
@@ -85,6 +96,7 @@ export async function activate(context: vscode.ExtensionContext) {
             }
         })
     )
+
 
     // Start the language server once the user opens the first text document...
     context.subscriptions.push(
@@ -97,6 +109,7 @@ export async function activate(context: vscode.ExtensionContext) {
         )
     )
 
+
     // ...or notebook.
     context.subscriptions.push(
         vscode.workspace.onDidOpenNotebookDocument(
@@ -108,12 +121,15 @@ export async function activate(context: vscode.ExtensionContext) {
         )
     )
 
-    
+
+   
 }
+
 
 export function deactivate(): Thenable<void> {
     return stopLangServer()
 }
+
 
 /**
  * Start (or restart) the language server.
@@ -125,10 +141,12 @@ export function deactivate(): Thenable<void> {
  */
 async function startLangServer() {
 
+
     // Don't interfere if we are already in the process of launching the server.
     if (clientStarting) {
         return
     }
+
 
     clientStarting = true
     if (client) {
@@ -138,32 +156,38 @@ async function startLangServer() {
     const cwd = getCwd()
     const serverPath = getServerPath()
 
+
     logger.info(`cwd: '${cwd}'`)
     logger.info(`server: '${serverPath}'`)
 
-    const resource = vscode.Uri.joinPath(vscode.Uri.file(cwd), serverPath)
+
+    const resource = vscode.Uri.joinPath(vscode.Uri.file(cwd), serverPath);
+    logger.info(`resource: ${resource}`);
     const pythonCommand = await getPythonCommand(resource)
     if (!pythonCommand) {
         clientStarting = false
         return
     }
-
-    logger.debug(`python: ${pythonCommand.join(" ")}`)
+    logger.info(`python: ${pythonCommand.join(" ")}`)
     const serverOptions: ServerOptions = {
         command: pythonCommand[0],
-        args: [...pythonCommand.slice(1), serverPath],
+        args: [...pythonCommand.slice(1), resource.fsPath],
         options: { cwd },
     };
+    
 
     client = new LanguageClient('pygls', serverOptions, getClientOptions());
     const promises = [client.start()]
+
 
     if (config.get<boolean>("debug")) {
         promises.push(startDebugging())
     }
 
+
     const results = await Promise.allSettled(promises)
     clientStarting = false
+
 
     for (const result of results) {
         if (result.status === "rejected") {
@@ -172,18 +196,22 @@ async function startLangServer() {
     }
 }
 
+
 async function stopLangServer(): Promise<void> {
     if (!client) {
         return
     }
 
+
     if (client.state === State.Running) {
         await client.stop()
     }
 
+
     client.dispose()
     client = undefined
 }
+
 
 function startDebugging(): Promise<void> {
     if (!vscode.workspace.workspaceFolders) {
@@ -195,6 +223,7 @@ function startDebugging(): Promise<void> {
         await vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], "pygls: Debug Server")
     }, 2000)
 }
+
 
 function getClientOptions(): LanguageClientOptions {
     const config = vscode.workspace.getConfiguration('pygls.client')
@@ -209,6 +238,7 @@ function getClientOptions(): LanguageClientOptions {
     return options
 }
 
+
 function startLangServerTCP(addr: number): LanguageClient {
     const serverOptions: ServerOptions = () => {
         return new Promise((resolve /*, reject */) => {
@@ -222,12 +252,14 @@ function startLangServerTCP(addr: number): LanguageClient {
         });
     };
 
+
     return new LanguageClient(
         `tcp lang server (port ${addr})`,
         serverOptions,
         getClientOptions()
     );
 }
+
 
 /**
  * Execute a command provided by the language server.
@@ -238,15 +270,18 @@ async function executeServerCommand() {
         return
     }
 
+
     const knownCommands = client.initializeResult.capabilities.executeCommandProvider?.commands
     if (!knownCommands || knownCommands.length === 0) {
         const info = client.initializeResult.serverInfo
         const name = info?.name || "Server"
         const version = info?.version || ""
 
+
         await vscode.window.showInformationMessage(`${name} ${version} does not implement any commands.`)
         return
     }
+
 
     const commandName = await vscode.window.showQuickPick(knownCommands, { canPickMany: false })
     if (!commandName) {
@@ -254,9 +289,11 @@ async function executeServerCommand() {
     }
     logger.info(`executing command: '${commandName}'`)
 
+
     const result = await vscode.commands.executeCommand(commandName /* if your command accepts arguments you can pass them here */)
     logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`)
 }
+
 
 /**
  * If the user has explicitly provided a src directory use that.
@@ -271,12 +308,13 @@ function getCwd(): string {
     if (cwd) {
         return cwd
     }
-
+   
     const serverDir = path.resolve(
         path.join(__dirname,'langserver', "servers")
     )
     return serverDir
 }
+
 
 /**
  *
@@ -287,6 +325,7 @@ function getServerPath(): string {
     const server = config.get<string>('launchScript')
     return server
 }
+
 
 /**
  * Return the python command to use when starting the server.
@@ -305,9 +344,11 @@ async function getPythonCommand(resource?: vscode.Uri): Promise<string[] | undef
     const command = [pythonPath]
     const enableDebugger = config.get<boolean>('debug')
 
+
     if (!enableDebugger) {
         return command
     }
+
 
     const debugHost = config.get<string>('debugHost')
     const debugPort = config.get<integer>('debugPort')
@@ -320,8 +361,10 @@ async function getPythonCommand(resource?: vscode.Uri): Promise<string[] | undef
         logger.error("Debugger will not be available.")
     }
 
+
     return command
 }
+
 
 /**
  * Return the python interpreter to use when starting the server.
@@ -339,9 +382,11 @@ async function getPythonInterpreter(resource?: vscode.Uri): Promise<string | und
         return pythonPath
     }
 
+
     if (!python) {
         return
     }
+
 
     if (resource) {
         logger.info(`Looking for environment in which to execute: '${resource.toString()}'`)
@@ -350,14 +395,17 @@ async function getPythonInterpreter(resource?: vscode.Uri): Promise<string | und
     const activeEnvPath = python.environments.getActiveEnvironmentPath(resource)
     logger.info(`Found environment: ${activeEnvPath.id}: ${activeEnvPath.path}`)
 
+
     const activeEnv = await python.environments.resolveEnvironment(activeEnvPath)
     if (!activeEnv) {
         logger.error(`Unable to resolve envrionment: ${activeEnvPath}`)
         return
     }
 
+
     const v = activeEnv.version
     const pythonVersion = semver.parse(`${v.major}.${v.minor}.${v.micro}`)
+
 
     // Check to see if the environment satisfies the min Python version.
     if (semver.lt(pythonVersion, MIN_PYTHON)) {
@@ -365,6 +413,7 @@ async function getPythonInterpreter(resource?: vscode.Uri): Promise<string | und
             `Your currently configured environment provides Python v${pythonVersion} `,
             `but pygls requires v${MIN_PYTHON}.\n\nPlease choose another environment.`
         ].join('')
+
 
         const response = await vscode.window.showErrorMessage(message, "Change Environment")
         if (!response) {
@@ -375,14 +424,17 @@ async function getPythonInterpreter(resource?: vscode.Uri): Promise<string | und
         }
     }
 
+
     const pythonUri = activeEnv.executable.uri
     if (!pythonUri) {
         logger.error(`URI of Python executable is undefined!`)
         return
     }
 
+
     return pythonUri.fsPath
 }
+
 
 async function getPythonExtension() {
     try {
@@ -392,23 +444,3 @@ async function getPythonExtension() {
     }
 }
 
-
-
-
-let commentId = 1;
-
-class NoteComment implements vscode.Comment {
-	id: number;
-	label: string | undefined;
-	savedBody: string | vscode.MarkdownString; // for the Cancel button
-	constructor(
-		public body: string | vscode.MarkdownString,
-		public mode: vscode.CommentMode,
-		public author: vscode.CommentAuthorInformation,
-		public parent?: vscode.CommentThread,
-		public contextValue?: string
-	) {
-		this.id = ++commentId;
-		this.savedBody = this.body;
-	}
-}

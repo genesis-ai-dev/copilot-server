@@ -54,6 +54,12 @@
             "description": "The working directory from which to launch the server.",
             "markdownDescription": "The working directory from which to launch the server.\nIf blank, this will default to the `examples/servers` directory."
           },
+          "pygls.server.workspace": {
+            "scope": "resource",
+            "type": "string",
+            "description": "The workspace directory (for debugging)"
+          }
+          ,
           "pygls.server.debug": {
             "scope": "resource",
             "default": false,
