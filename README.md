@@ -1,6 +1,13 @@
 # Python Language Server for vscode (so far)
 This VSCode extension provides a Language Server written in Python. It includes code actions that can suggest edits and provide autocompletion for text documents within the VSCode environment. Lots more will added on top of this, but for a start this seems helpful.
+## Install needed extensions:
+1. Install Pylance and Python from the Microsoft vscode extension store.
+2. Install `scripture-language-support` also from the extension store.
+3. Intalling the `codex-editor` extension (this will take a bit more effort).
 
+First, clone the repo `git clone https://github.com/genesis-ai-dev/codex-editor` and cd to that directory. Next, run `npm install`, `npm run compile` and `vsce package` in that order (ignore the warnings for `vsce`). If it is not yet installed, run `npm install -g vsce`.
+
+This will create a `codex-editor.vsix` file. To add this as an extension in vscode, run `code --install-extension codex-editor.vsix` or open the extensions tab in vscode, select the three dots in the top right corner and click `Install from VSIX`.
 ## Development Setup
 
 To contribute to this extension, clone the repository, and ensure you have the necessary dependencies installed:
@@ -8,7 +15,7 @@ To contribute to this extension, clone the repository, and ensure you have the n
 1. Ensure you have the Python extention for vscode.
 2. Clone this repo:
 ```bash
-git clone https://github.com/dadukhankevin/Language-Server-for-Translation
+git clone https://github.com/genesis-ai-dev/copilot-server.git
 ```
 2. Install the required Python packages:
 
@@ -16,8 +23,15 @@ git clone https://github.com/dadukhankevin/Language-Server-for-Translation
 pip install -r requirements.txt
 ```
 
-3. Implement additional checks or completion functions as needed.
-4. Add your functions to the respective `Ideas` or `Completion` class instances.
+3. Add the correct path to `servers/settings.json`
+replace line 12:
+    ```"pygls.server.cwd": "C:\\Users\\danie\\langserver\\servers"```
+with:
+    ```"pygls.server.cwd": "<Your path to server directory>"```
+This is only needed due to a bug and relative paths and so on will work soon. Just don't accidentally push these changes.
+
+4. Implement additional checks or completion functions as needed.
+5. Add your functions to the respective `Ideas` or `Completion` class instances.
 
 ## Features
 
@@ -48,7 +62,7 @@ To register this action, add the function to the `Ideas` class instance in `serv
 base_actions.Ideas(server, line_edits=[..., my_custom_check])
 ```
 
-### Autocompletion
+### Autocompletion (UPDATE: These should now return a LineEdit)
 
 You can also create functions that provide completion suggestions based on the current text. These functions should return a list of strings representing suggested completions.
 
