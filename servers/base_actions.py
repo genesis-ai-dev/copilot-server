@@ -1,11 +1,12 @@
 from typing import Callable
 from pygls.server import LanguageServer
-import webbrowser
+
 from lsprotocol.types import (
     Range,
     Position,
     TextEdit,
     WorkspaceEdit,
+    CompletionParams,
     CodeAction,
     CodeActionKind,
     CodeActionParams,
@@ -17,7 +18,7 @@ from lsprotocol.types import (
     CompletionItem,
     CompletionItemKind,
     CompletionList,
-    CompletionParams,
+    CompletionOptions,
 )
 
 
@@ -111,82 +112,34 @@ class Ideas:
         return items
 
     
-
 class Completion:
-    def __init__(self, server: LanguageServer, completion_functions: list[Callable], call_only_until_first_valid: bool=False):
+    def __init__(self, server, completion_functions, trigger_characters=[' ']):
         """
-        Initializes a Completion object.
-
-        Parameters:
-        - server (LanguageServer): The LanguageServer instance to handle language-related features.
-        - completion_functions (list[Callable]): List of functions to provide completion suggestions.
-        - call_only_until_first_valid (bool, optional): If True, stops calling completion functions after the first valid suggestion is found.
-
-        Returns:
-        None
+        Class to handle text document completion using a list of completion functions.
+        
+        :param server: A pygls server instance
+        :type server: LanguageServer
+        :param completion_functions: A list of completion functions to use for generating completions.
+        :type completion_functions: List[Callable]
         """
+
         self.server = server
         self.completion_functions = completion_functions
-        self.call_only_until_first_valid = call_only_until_first_valid
+        self.trigger_characters = trigger_characters
 
-        @server.feature(TEXT_DOCUMENT_COMPLETION)
-        def check_all(params: CodeAction) -> CompletionList:
+        @server.feature(TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=trigger_characters))
+        def check_all(params: CompletionParams):
             document = server.workspace.get_document(params.text_document.uri)
-            current_line = document.lines[params.position.line].strip()
-            start_line = params.position.line
-            range_ = Range(
-                start=Position(line=start_line, character=0),
-                end=Position(line=start_line, character=len(current_line)),
+            edits = [CompletionItem(label=item['message'], text_edit=TextEdit(
+                range=Range(
+                    start=params.position,
+                    end=Position(line=params.position.line, character=params.position.character + 5) # Adjust the range as needed
+                ),
+                new_text=f"{item['edit']}"
+            )) for item in [completion_function(lines=document.lines, current_line=params.position.line) for completion_function in self.completion_functions] if item]
+
+            return CompletionList(
+                is_incomplete=False,
+                items=edits
             )
-            items = self.complete(current_line)
-            new_items = []
-            if items:
-                for item in items.items:
-
-                    # Use the correct character offset for TextEdit
-                    text_edit = TextEdit(
-                        range=range_,
-                        new_text=current_line + item.label
-                    )
-                    item.text_edit = text_edit
-                    item.kind = CompletionItemKind.Keyword
-                return items
-            return None
-        self.check_all = check_all
-
-
-    def complete(self, line:str) -> CompletionList:
-        """
-        Generates a list of completion items by calling each completion function.
-
-        Parameters:
-        - line (str): The current line for which completion items are requested.
-
-        Returns:
-        CompletionList: The list of completion items.
-        """
-        items = []
-        for completion_function in self.completion_functions:
-            out = completion_function(line)
-            print(out)
-            if out:
-                items += [CompletionItem(label=word) for word in out]
-                if len(items) != 0 and self.call_only_until_first_valid:
-                    break
-        if items:
-            return CompletionList(is_incomplete=True, items=items)
-        else:
-            return None
-    
-    def debug(self, line: str) -> None:
-        """
-        Prints the labels of completion items generated for a given line.
-
-        Parameters:
-        - line (str): The line for which completion items are generated.
-
-        Returns:
-        None
-        """
-        items = self.complete(line)
-        [print(word.label) for word in items]
+        self.check_all = check_all 
