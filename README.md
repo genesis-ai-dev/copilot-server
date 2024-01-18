@@ -24,15 +24,9 @@ git clone https://github.com/genesis-ai-dev/copilot-server.git
 pip install -r requirements.txt
 ```
 
-3. Add the correct path to `servers/settings.json`
-replace line 12:
-    ```"pygls.server.cwd": "C:\\Users\\danie\\langserver\\servers"```
-with:
-    ```"pygls.server.cwd": "<Your path to server directory>"```
-This is only needed due to a bug and relative paths and so on will work soon. Just don't accidentally push these changes.
+3. Implement additional checks or completion functions as needed.
+4. Add your functions to the respective `Ideas` or `Completion` class instances.
 
-4. Implement additional checks or completion functions as needed.
-5. Add your functions to the respective `Ideas` or `Completion` class instances.
 ## Documentation
 
 The `base_actions` module provides two classes, `Ideas` and `Completion`, that can be used to handle language-related features in a Language Server.
