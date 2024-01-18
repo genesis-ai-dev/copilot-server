@@ -20,7 +20,7 @@ from lsprotocol.types import (
     CompletionList,
     CompletionOptions,
 )
-
+import webbrowser
 
 class LineEdit:
     def __init__(self, message, edit):
@@ -66,6 +66,10 @@ class Ideas:
             Returns:
             List[CodeAction]: The list of code action items.
             """
+            document_uri = params.text_document.uri
+            document = self.server.workspace.get_document(document_uri)
+            
+
             items = []
             for line_edit in self.line_edits:
                 items += self.idea(params, line_edit)

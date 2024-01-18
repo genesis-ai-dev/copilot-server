@@ -53,6 +53,7 @@ export async function activate(context: vscode.ExtensionContext) {
    
     logger = vscode.window.createOutputChannel('pygls', { log: true })
     logger.info("Extension activated.")
+    logger.info(`extension path ${context.extensionPath}`);
 
 
     await getPythonExtension();
@@ -65,7 +66,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         vscode.commands.registerCommand("pygls.server.restart", async () => {
             logger.info('restarting server...')
-            await startLangServer()
+            await startLangServer(context);
         })
     )
 
@@ -82,7 +83,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         python.environments.onDidChangeActiveEnvironmentPath(async () => {
             logger.info('python env modified, restarting server...')
-            await startLangServer()
+            await startLangServer(context)
         })
     )
 
@@ -92,7 +93,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.workspace.onDidChangeConfiguration(async (event) => {
             if (event.affectsConfiguration("pygls.server") || event.affectsConfiguration("pygls.client")) {
                 logger.info('config modified, restarting server...')
-                await startLangServer()
+                await startLangServer(context)
             }
         })
     )
@@ -103,7 +104,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.workspace.onDidOpenTextDocument(
             async () => {
                 if (!client) {
-                    await startLangServer()
+                    await startLangServer(context)
                 }
             }
         )
@@ -115,7 +116,7 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.workspace.onDidOpenNotebookDocument(
             async () => {
                 if (!client) {
-                    await startLangServer()
+                    await startLangServer(context)
                 }
             }
         )
@@ -139,7 +140,7 @@ export function deactivate(): Thenable<void> {
  * @param cwd The working directory in which to run the executable
  * @returns
  */
-async function startLangServer() {
+async function startLangServer(context: vscode.ExtensionContext) {
 
 
     // Don't interfere if we are already in the process of launching the server.
@@ -152,26 +153,26 @@ async function startLangServer() {
     if (client) {
         await stopLangServer()
     }
-    const config = vscode.workspace.getConfiguration("pygls.server")
-    const cwd = getCwd()
-    const serverPath = getServerPath()
 
+    const config = vscode.workspace.getConfiguration("pygls.server");
+    const server_path = '/servers/server.py';
+    const extension_path = context.extensionPath;
 
-    logger.info(`cwd: '${cwd}'`)
-    logger.info(`server: '${serverPath}'`)
+    const full_path = vscode.Uri.parse(extension_path + server_path);
+    logger.info(`full_server_path: '${full_path}'`);
 
+    const pythonCommand = await getPythonCommand(full_path);
 
-    const resource = vscode.Uri.joinPath(vscode.Uri.file(cwd), serverPath);
-    logger.info(`resource: ${resource}`);
-    const pythonCommand = await getPythonCommand(resource)
     if (!pythonCommand) {
         clientStarting = false
         return
     }
     logger.info(`python: ${pythonCommand.join(" ")}`)
+    const cwd = extension_path.toString();
+
     const serverOptions: ServerOptions = {
         command: pythonCommand[0],
-        args: [...pythonCommand.slice(1), resource.fsPath],
+        args: [...pythonCommand.slice(1), full_path.fsPath],
         options: { cwd },
     };
     
@@ -226,9 +227,19 @@ function startDebugging(): Promise<void> {
 
 
 function getClientOptions(): LanguageClientOptions {
-    const config = vscode.workspace.getConfiguration('pygls.client')
     const options = {
-        documentSelector: config.get<any>('documentSelector'),
+        documentSelector: [
+            {
+                pattern: '**/*.codex'
+            }, 
+            {
+                pattern: '**/*.scripture'
+            },
+            {
+                schema: "file",
+                language: "plaintext5"
+            }
+          ],
         outputChannel: logger,
         connectionOptions: {
             maxRestartCount: 0 // don't restart on server failure.
@@ -292,38 +303,6 @@ async function executeServerCommand() {
 
     const result = await vscode.commands.executeCommand(commandName /* if your command accepts arguments you can pass them here */)
     logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`)
-}
-
-
-/**
- * If the user has explicitly provided a src directory use that.
- * Otherwise, fallback to the examples/servers directory.
- *
- * @returns The working directory from which to launch the server
- */
-function getCwd(): string {
-    const config = vscode.workspace.getConfiguration("pygls.server")
-    const cwd = config.get<string>('cwd')
-    logger.info(cwd)
-    if (cwd) {
-        return cwd
-    }
-   
-    const serverDir = path.resolve(
-        path.join(__dirname,'langserver', "servers")
-    )
-    return serverDir
-}
-
-
-/**
- *
- * @returns The python script that implements the server.
- */
-function getServerPath(): string {
-    const config = vscode.workspace.getConfiguration("pygls.server")
-    const server = config.get<string>('launchScript')
-    return server
 }
 
 
