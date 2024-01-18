@@ -12,6 +12,7 @@ def check1(text: str) -> Union[dict, bool]:
     else:
         return False
 
+
 def check2(text: str) -> Union[dict, bool]:
     upper_text = text.upper()
     if upper_text != text:
