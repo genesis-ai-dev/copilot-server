@@ -20,7 +20,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
 const net = require("net");
-const path = require("path");
 const vscode = require("vscode");
 const semver = require("semver");
 const python_extension_1 = require("@vscode/python-extension");
@@ -42,6 +41,7 @@ let logger;
 async function activate(context) {
     logger = vscode.window.createOutputChannel('pygls', { log: true });
     logger.info("Extension activated.");
+    logger.info(`extension path ${context.extensionPath}`);
     await getPythonExtension();
     if (!python) {
         return;
@@ -49,7 +49,7 @@ async function activate(context) {
     // Restart language server command
     context.subscriptions.push(vscode.commands.registerCommand("pygls.server.restart", async () => {
         logger.info('restarting server...');
-        await startLangServer();
+        await startLangServer(context);
     }));
     // Execute command... command
     context.subscriptions.push(vscode.commands.registerCommand("pygls.server.executeCommand", async () => {
@@ -58,33 +58,25 @@ async function activate(context) {
     // Restart the language server if the user switches Python envs...
     context.subscriptions.push(python.environments.onDidChangeActiveEnvironmentPath(async () => {
         logger.info('python env modified, restarting server...');
-        await startLangServer();
+        await startLangServer(context);
     }));
     // ... or if they change a relevant config option
     context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(async (event) => {
         if (event.affectsConfiguration("pygls.server") || event.affectsConfiguration("pygls.client")) {
             logger.info('config modified, restarting server...');
-            await startLangServer();
+            await startLangServer(context);
         }
     }));
     // Start the language server once the user opens the first text document...
     context.subscriptions.push(vscode.workspace.onDidOpenTextDocument(async () => {
         if (!client) {
-            await startLangServer();
+            await startLangServer(context);
         }
     }));
     // ...or notebook.
     context.subscriptions.push(vscode.workspace.onDidOpenNotebookDocument(async () => {
         if (!client) {
-            await startLangServer();
-        }
-    }));
-    // Restart the server if the user modifies it.
-    context.subscriptions.push(vscode.workspace.onDidSaveTextDocument(async (document) => {
-        const expectedUri = vscode.Uri.file(path.join(getCwd(), getServerPath()));
-        if (expectedUri.toString() === document.uri.toString()) {
-            logger.info('server modified, restarting...');
-            await startLangServer();
+            await startLangServer(context);
         }
     }));
 }
@@ -101,7 +93,7 @@ exports.deactivate = deactivate;
  * @param cwd The working directory in which to run the executable
  * @returns
  */
-async function startLangServer() {
+async function startLangServer(context) {
     // Don't interfere if we are already in the process of launching the server.
     if (clientStarting) {
         return;
@@ -111,20 +103,20 @@ async function startLangServer() {
         await stopLangServer();
     }
     const config = vscode.workspace.getConfiguration("pygls.server");
-    const cwd = getCwd();
-    const serverPath = getServerPath();
-    logger.info(`cwd: '${cwd}'`);
-    logger.info(`server: '${serverPath}'`);
-    const resource = vscode.Uri.joinPath(vscode.Uri.file(cwd), serverPath);
-    const pythonCommand = await getPythonCommand(resource);
+    const server_path = '/servers/server.py';
+    const extension_path = context.extensionPath;
+    const full_path = vscode.Uri.parse(extension_path + server_path);
+    logger.info(`full_server_path: '${full_path}'`);
+    const pythonCommand = await getPythonCommand(full_path);
     if (!pythonCommand) {
         clientStarting = false;
         return;
     }
-    logger.debug(`python: ${pythonCommand.join(" ")}`);
+    logger.info(`python: ${pythonCommand.join(" ")}`);
+    const cwd = extension_path.toString();
     const serverOptions = {
         command: pythonCommand[0],
-        args: [...pythonCommand.slice(1), serverPath],
+        args: [...pythonCommand.slice(1), full_path.fsPath],
         options: { cwd },
     };
     client = new node_1.LanguageClient('pygls', serverOptions, getClientOptions());
@@ -163,7 +155,12 @@ function startDebugging() {
 function getClientOptions() {
     const config = vscode.workspace.getConfiguration('pygls.client');
     const options = {
-        documentSelector: config.get('documentSelector'),
+        documentSelector: [
+            {
+                "scheme": "*",
+                "language": "*"
+            }
+        ],
         outputChannel: logger,
         connectionOptions: {
             maxRestartCount: 0 // don't restart on server failure.
@@ -217,15 +214,6 @@ async function executeServerCommand() {
  *
  * @returns The working directory from which to launch the server
  */
-function getCwd() {
-    const config = vscode.workspace.getConfiguration("pygls.server");
-    const cwd = config.get('cwd');
-    if (cwd) {
-        return cwd;
-    }
-    const serverDir = path.resolve(path.join(__dirname, "..", "..", "servers"));
-    return serverDir;
-}
 /**
  *
  * @returns The python script that implements the server.

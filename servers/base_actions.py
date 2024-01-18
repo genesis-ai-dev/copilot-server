@@ -16,22 +16,41 @@ from lsprotocol.types import (
     CodeActionParams,
     TEXT_DOCUMENT_COMPLETION,
     CompletionItem,
-    CompletionItemKind,
+    Diagnostic,
+    TEXT_DOCUMENT_DIAGNOSTIC,
+    DiagnosticOptions,
     CompletionList,
     CompletionOptions,
+    DiagnosticSeverity,
+    DocumentDiagnosticParams,
+    TEXT_DOCUMENT_DID_CHANGE,
+    DidChangeTextDocumentParams
 )
-import webbrowser
 
 class LineEdit:
-    def __init__(self, message, edit):
+    def __init__(self, message, edit, source="server", start = None, end = None, severity: DiagnosticSeverity = DiagnosticSeverity.Warning):
         self.message = message
         self.edit = edit
+        self.severity = severity
+        self.source = source
+        self.start = start
+        self.end = end
 
     def __getitem__(self, key):
         if key == 'message':
             return self.message
         elif key == 'edit':
             return self.edit
+        elif key == 'severity':
+            return self.severity
+        elif key == 'source':
+            return self.source
+        
+        elif key == 'start':
+            return self.start
+        elif key == 'end':
+            return self.end
+        
 
 
 class Ideas:
@@ -67,13 +86,12 @@ class Ideas:
             List[CodeAction]: The list of code action items.
             """
             document_uri = params.text_document.uri
-            document = self.server.workspace.get_document(document_uri)
-            
-
-            items = []
-            for line_edit in self.line_edits:
-                items += self.idea(params, line_edit)
-            return items
+            if ".codex" in document_uri or ".scripture" in document_uri:
+                items = []
+                for line_edit in self.line_edits:
+                    items += self.idea(params, line_edit)
+                return items
+            return []
         self.check_all = check_all
 
 
@@ -133,17 +151,56 @@ class Completion:
 
         @server.feature(TEXT_DOCUMENT_COMPLETION, CompletionOptions(trigger_characters=trigger_characters))
         def check_all(params: CompletionParams):
-            document = server.workspace.get_document(params.text_document.uri)
-            edits = [CompletionItem(label=item['message'], text_edit=TextEdit(
-                range=Range(
-                    start=params.position,
-                    end=Position(line=params.position.line, character=params.position.character + 5) # Adjust the range as needed
-                ),
-                new_text=f"{item['edit']}"
-            )) for item in [completion_function(lines=document.lines, current_line=params.position.line) for completion_function in self.completion_functions] if item]
+            document_uri = params.text_document.uri
+            if ".codex" in document_uri or ".scripture" in document_uri:
+                document = server.workspace.get_document(document_uri)
+                edits = [CompletionItem(label=item['message'], text_edit=TextEdit(
+                    range=Range(
+                        start=params.position,
+                        end=Position(line=params.position.line, character=params.position.character + 5) # Adjust the range as needed
+                    ),
+                    new_text=f"{item['edit']}"
+                )) for item in [completion_function(lines=document.lines, current_line=params.position.line) for completion_function in self.completion_functions] if item]
 
-            return CompletionList(
-                is_incomplete=False,
-                items=edits
-            )
+                return CompletionList(
+                    is_incomplete=False,
+                    items=edits
+                )
+            return []
+        self.check_all = check_all 
+
+
+class Diagnostics:
+    def __init__(self, server, diagnostic_functions):
+        
+        """
+        Class to handle text document diagnostic using a list of completion functions.
+        
+        :param server: A pygls server instance
+        :type server: LanguageServer
+        :param diagnostic_functions: A list of completion functions to use for generating completions.
+        :type diagnostic_functions: List[Callable]
+        """
+
+        self.server = server
+        self.diagnostic_functions = diagnostic_functions
+
+        @server.feature(TEXT_DOCUMENT_DID_CHANGE)
+        def check_all(ls ,params: DidChangeTextDocumentParams):
+            document_uri = params.text_document.uri
+            if ".codex" in document_uri or ".scripture" in document_uri:
+                document = server.workspace.get_document(document_uri)
+                diagnostics = [[Diagnostic(source=item['source'], message=item['message'], severity=item['severity'],
+                            range=Range(
+                        start=item['start'],
+                        end=item['end'])) for item in diag] # Adjust the range as needed
+                        for diag in 
+                        [diagnostic_function(lines=document.lines) 
+                         for diagnostic_function in self.diagnostic_functions] 
+                         if diag]
+                flattened_list = [item for sublist in diagnostics for item in sublist]
+
+                ls.publish_diagnostics(document_uri, flattened_list)
+                return diagnostics
+            return []
         self.check_all = check_all 
