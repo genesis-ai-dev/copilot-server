@@ -136,9 +136,20 @@ def completion1(lines: list[str], current_line: int):
         line_edit = base_actions.LineEdit(message='test', edit='test')
         return line_edit
     return False
+    
+def diagnotic1(lines: list[str]):
+    diagnostics = []
+    for line in lines:
+        summary = analyze.process(string = line).summary_list_of_issues()   
+        if summary:
+            diagnostics.append(base_actions.LineItem(message=", ".join(summary), edit=None, source='Wildebeest', start=Position(line=lines.index(line), character=0), end=Position(line=lines.index(line), character=len(line))))
+    if diagnostics:
+        return diagnostics
+    return False
 
 base_actions.Ideas(server, line_edits=[check1, check2])
 base_actions.Completion(server, completion_functions=[completion1])
+base_actions.Diagnostics(server, diagnostic_functions=[diagnotic1])
 
 if __name__ == "__main__":
     print('running:')

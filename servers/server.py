@@ -3,7 +3,7 @@ from pygls.server import LanguageServer
 import wildebeest.wb_analysis as analyze
 import base_actions as base_actions
 from lsprotocol.types import Position
-import webbrowser
+
 server = LanguageServer("code-action-server", "v0.1")
 
 def check1(text: str) -> Union[dict, bool]:
@@ -40,6 +40,7 @@ def diagnotic1(lines: list[str]):
     if diagnostics:
         return diagnostics
     return False
+
 base_actions.Ideas(server, line_edits=[check1, check2])
 base_actions.Completion(server, completion_functions=[completion1])
 base_actions.Diagnostics(server, diagnostic_functions=[diagnotic1])
