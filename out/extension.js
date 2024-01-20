@@ -79,6 +79,8 @@ async function activate(context) {
             await startLangServer(context);
         }
     }));
+    // events
+    //vscode.window.onDidChangeTextEditorSelection(onSelectionChange);
 }
 exports.activate = activate;
 function deactivate() {
@@ -153,12 +155,17 @@ function startDebugging() {
     }, 2000);
 }
 function getClientOptions() {
-    const config = vscode.workspace.getConfiguration('pygls.client');
     const options = {
         documentSelector: [
             {
-                "scheme": "*",
-                "language": "*"
+                pattern: '**/*.codex'
+            },
+            {
+                pattern: '**/*.scripture'
+            },
+            {
+                schema: "file",
+                language: "plaintext5"
             }
         ],
         outputChannel: logger,
@@ -187,7 +194,7 @@ function startLangServerTCP(addr) {
  * Execute a command provided by the language server.
  */
 async function executeServerCommand() {
-    var _a;
+    var _a, _b;
     if (!client || client.state !== node_1.State.Running) {
         await vscode.window.showErrorMessage("There is no language server running.");
         return;
@@ -205,23 +212,8 @@ async function executeServerCommand() {
         return;
     }
     logger.info(`executing command: '${commandName}'`);
-    const result = await vscode.commands.executeCommand(commandName /* if your command accepts arguments you can pass them here */);
+    const result = await vscode.commands.executeCommand(commandName, (_b = vscode.window.activeTextEditor) === null || _b === void 0 ? void 0 : _b.document.uri);
     logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`);
-}
-/**
- * If the user has explicitly provided a src directory use that.
- * Otherwise, fallback to the examples/servers directory.
- *
- * @returns The working directory from which to launch the server
- */
-/**
- *
- * @returns The python script that implements the server.
- */
-function getServerPath() {
-    const config = vscode.workspace.getConfiguration("pygls.server");
-    const server = config.get('launchScript');
-    return server;
 }
 /**
  * Return the python command to use when starting the server.

@@ -129,7 +129,7 @@ class Completion:
         self.trigger_characters = trigger_characters
 
         @server.feature(lsp_types.TEXT_DOCUMENT_COMPLETION, lsp_types.CompletionOptions(trigger_characters=trigger_characters))
-        def check_all(params: lsp_types.CompletionParams):
+        async def check_all(params: lsp_types.CompletionParams):
             
             document_uri = params.text_document.uri
             if ".codex" in document_uri or ".scripture" in document_uri:

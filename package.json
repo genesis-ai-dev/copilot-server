@@ -30,7 +30,15 @@
         "command": "pygls.server.executeCommand",
         "title": "Execute Command",
         "category": "pygls"
+      },
+      {
+        "command": "pygls.server.EmbedDocument",
+        "title": "Embed Document",
+        "category": "pygks"
       }
+    ],
+    "keybindings":[
+
     ],
     "configuration": [
       {

@@ -3,6 +3,31 @@ import re
 
 
 class CodexReader:
+    """
+    A class for reading and processing Codex files containing markdown and scripture cells.
+
+    Attributes:
+        verse_chunk_size (int): The size of verse chunks for grouping scripture verses.
+
+    Methods:
+        read_file(filename: str) -> dict:
+            Reads a Codex file and processes its cells to extract chapters and verse chunks.
+
+        process_cells(cells: list) -> dict:
+            Processes the cells from the Codex file to extract chapters and verse chunks.
+
+        split_verses(scripture_text: str) -> list:
+            Splits the scripture text into verses and retains the markers.
+
+        chunk_verses(verses: list, language: str) -> list:
+            Groups verses into chunks based on the specified size.
+
+        combine_verses(verse_chunk: list, language: str) -> dict:
+            Combines verses into a chunk, providing a formatted name and combined text.
+
+        get_embed_format(filename: str) -> list:
+            Retrieves the embedded format of chapters and verse chunks from the Codex file.
+    """
     def __init__(self, verse_chunk_size=4):
         self.verse_chunk_size = verse_chunk_size
 
@@ -59,7 +84,7 @@ class CodexReader:
             chunk_name = f"{language} Chunk (problematic schema)"
 
         combined_text = ''.join(re.sub(r'[A-Z]+\s\d+:\d+\n?', '', verse) for verse in verse_chunk)
-
+        combined_text = combined_text.replace('\r', '').replace('1\n', '').replace('\n1', '') # bunch of random characters get replaced
         return {chunk_name: combined_text.strip()}
     
     def get_embed_format(self, filename):
@@ -73,8 +98,8 @@ class CodexReader:
 
 
 # Example usage
-reader = CodexReader(verse_chunk_size=5)
-result = reader.get_embed_format("C:\\Users\\danie\\example_workspace\\drafts\\Bible\\ZEP.codex")
+# reader = CodexReader(verse_chunk_size=5)
+# result = reader.get_embed_format("C:\\Users\\danie\\example_workspace\\drafts\\Bible\\ZEP.codex")
 
-for i in result:
-    print(i)
+# for i in result:
+#     print(i)

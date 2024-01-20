@@ -121,6 +121,9 @@ export async function activate(context: vscode.ExtensionContext) {
             }
         )
     )
+    // events
+    //vscode.window.onDidChangeTextEditorSelection(onSelectionChange);
+
 
 
    
@@ -301,7 +304,7 @@ async function executeServerCommand() {
     logger.info(`executing command: '${commandName}'`)
 
 
-    const result = await vscode.commands.executeCommand(commandName /* if your command accepts arguments you can pass them here */)
+    const result = await vscode.commands.executeCommand(commandName,  vscode.window.activeTextEditor?.document.uri)
     logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`)
 }
 
@@ -423,3 +426,55 @@ async function getPythonExtension() {
     }
 }
 
+
+
+
+// // Custom pygls commands
+// vscode.commands.registerCommand("pygls.server.selectionFunction", async () => {
+//     if (!client || client.state !== State.Running) {
+//         await vscode.window.showErrorMessage("Language server is not running.");
+//         return;
+//     }
+
+//     // Get the active text editor
+//     const editor = vscode.window.activeTextEditor;
+//     if (!editor) {
+//         await vscode.window.showErrorMessage("No active text editor.");
+//         return;
+//     }
+
+//     // Get the current document URI
+//     const documentUri = editor.document.uri.toString();
+
+//     // Get the selection or cursor position
+//     const selection = editor.selection;
+//     const position = selection ? selection.start : editor.selection.active;
+
+//     // Assuming 'params' is an object representing command parameters
+//     const params = {
+//         textDocument: {
+//             uri: documentUri
+//         },
+//         position: {
+//             line: position.line,
+//             character: position.character
+//         }
+//         // Add other parameters as needed
+//     };
+
+//     // Invoke the custom command on the language server
+//     const result = await client.sendRequest("pygls.server.random", params);
+
+//     // Handle the result as needed
+//     console.log("Random command result:", result);
+// });
+
+// function onSelectionChange(event: vscode.TextEditorSelectionChangeEvent) {
+//     // Check if there is a selection
+//     if (!event.textEditor.selection.isEmpty) {
+//         const selectedText = event.textEditor.document.getText(event.textEditor.selection);
+
+//         // Do something with the selected text
+//         console.log('Selected text:', selectedText);
+//     }
+// }
