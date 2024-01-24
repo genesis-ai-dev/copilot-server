@@ -22,9 +22,7 @@ import time
 import uuid
 from json import JSONDecodeError
 from typing import Optional
-
 from lsprotocol import types as lsp
-
 from pygls.server import LanguageServer
 
 COUNT_DOWN_START_IN_SECONDS = 10

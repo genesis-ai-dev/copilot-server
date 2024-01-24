@@ -1,17 +1,27 @@
 from typing import Union
 from pygls.server import LanguageServer
 import wildebeest.wb_analysis as analyze
-import base_actions as base_actions
+from tools import base_actions
 from lsprotocol.types import Position, DidCloseTextDocumentParams, TEXT_DOCUMENT_DID_CLOSE
-import embedding_tools as emb
+from tools import embedding_tools as emb
 import urllib.parse
+from tools.spell_check import Dictionary, SpellCheck
 import re
 
 is_embedding = ""
 last_result = ""
 server = LanguageServer("code-action-server", "v0.1")
 database = None
+spellcheck = None
+dictionary = None
+folder_path = '/project_data'
 
+def verify_spellcheck():
+    global dictionary, spellcheck
+    dictionary_path = server.workspace.root_path + folder_path
+    if not dictionary:
+        dictionary = Dictionary(dictionary_path)
+        spellcheck = SpellCheck(dictionary=dictionary, relative_checking=False)
 
 def is_bible_verse(reference):
     # Define a regex pattern for Bible verse references
@@ -43,13 +53,15 @@ def check2(text: str) -> Union[dict, bool]:
     return False
 
 
-# def completion1(lines: list[str], current_line: int):
-#     if lines[current_line].strip().endswith("The"):
-#         return base_actions.LineItem(message='test', edit='test')
-#     return False
+def spell_check_completion(lines: list[str], current_line: int, params):
+    verify_spellcheck()
+    word = lines[current_line].strip().split(" ")[-1]
+    if word != '':
+        return [base_actions.LineItem(message=completion, edit=completion) for completion in spellcheck.complete(word) if completion] 
+    return False
 
 
-def diagnotic1(lines: list[str]):
+def wildebeest(lines: list[str]):
     diagnostics = []
     for line in lines:
         summary = analyze.process(string=line).summary_list_of_issues()
@@ -64,19 +76,49 @@ def diagnotic1(lines: list[str]):
     return diagnostics if diagnostics else False
 
 
+def spell_diagnostic(lines: list[str]):
+    verify_spellcheck()
+    diagnostics = []
+    for line in lines:
+        for word in line.split(" "):
+            check = spellcheck.is_correction_needed(word)
+            if check:
+                diagnostics.append(base_actions.LineItem(
+                    message=f"Typo: {word} -> {[check for check in spellcheck.check(word) if check]}",
+                    edit=None,
+                    source='spell check',
+                    start=Position(line=lines.index(line), character=line.index(word)),
+                    end=Position(line=lines.index(line), character=line.index(word)+len(word))
+                ))
+    return diagnostics if diagnostics else False
+
+
+def spell_action(line, params):
+    actions = []
+    for diagnostic in params.context.diagnostics:
+        if '->' in diagnostic.message:
+            code_action = base_actions.LineItem(
+                message=diagnostic.message,
+                edit=str(params.context.diagnostics),
+                diagnostic=[diagnostic],
+            )
+            actions.append(code_action)
+    return actions if actions else [False]
+    
+# def spell_check_diagnostic()
+
+
 def embed_document(params):
     global database
-    db_path = server.workspace.root_path + "/" + "database"
+    db_path = server.workspace.root_path + folder_path
     path = params[0]['fsPath']
     if ".codex" in path:
         if not database:
             database = emb.DataBase(db_path)
         server.show_message(message="Embedding document.")
         database.upsert_codex_file(path=path)
-        server.show_message(
-            message=f"The Codex file '{path}' has been upserted into 'database'")
-    else:
-        server.show_message(message="Current file must be .codex")
+        server.show_message(message=f"The Codex file '{path}' has been upserted into 'database'")
+
 
 
 @server.feature(TEXT_DOCUMENT_DID_CLOSE)
@@ -93,8 +135,7 @@ async def on_close(ls, params: DidCloseTextDocumentParams):
 def embed_document_command(params):
     return embed_document(params)
 
-
-def embed_idea(query: str):
+def embed_idea(query: str, params):
     global database, last_result
     db_path = server.workspace.root_path + "/" + "database"
     if not database:
@@ -110,15 +151,15 @@ def embed_idea(query: str):
             line_edit = base_actions.LineItem(
                 message=str(result), edit=result)
             last_result = line_edit
-            return line_edit
-    return False
+            return [line_edit]
+    return [False]
 
 
 server.command("pygls.server.EmbedDocument")(embed_document_command)
 
-base_actions.Ideas(server, line_edits=[embed_idea])
-# base_actions.Completion(server, completion_functions=[completion1])
-base_actions.Diagnostics(server, diagnostic_functions=[diagnotic1])
+base_actions.Ideas(server, line_edits=[embed_idea, spell_action])
+base_actions.Completion(server, completion_functions=[spell_check_completion])
+base_actions.Diagnostics(server, diagnostic_functions=[wildebeest, spell_diagnostic])
 
 if __name__ == "__main__":
     print('running:')

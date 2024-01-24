@@ -1,4 +1,4 @@
-from codex_tools import CodexReader
+from tools.codex_tools import CodexReader
 from txtai import Embeddings
 
 class DataBase:

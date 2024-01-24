@@ -7,13 +7,14 @@ import lsprotocol.types as lsp_types
 
 
 class LineItem:
-    def __init__(self, message, edit, source="server", start = None, end = None, severity: lsp_types.DiagnosticSeverity = lsp_types.DiagnosticSeverity.Warning):
+    def __init__(self, message, edit, source="server", start = None, end = None, severity: lsp_types.DiagnosticSeverity = lsp_types.DiagnosticSeverity.Warning, diagnostic=None):
         self.message = message
         self.edit = edit
         self.severity = severity
         self.source = source
         self.start = start
         self.end = end
+        self.diagnostic = diagnostic
 
     def __getitem__(self, key):
         if key == 'message':
@@ -24,7 +25,8 @@ class LineItem:
             return self.severity
         elif key == 'source':
             return self.source
-        
+        elif key == 'diagnostic':
+            return self.diagnostic
         elif key == 'start':
             return self.start
         elif key == 'end':
@@ -94,21 +96,23 @@ class Ideas:
 
         lines = document.lines[start_line : end_line + 1]
         for idx, line in enumerate(lines):
-            data = line_edit(line)
-            if data: # All line_edit functions must return false if they are unused otherwise follow the schema
-                assert data.__class__ == LineItem, "You're line edit function must return either a valid LineEdit or bool: False"
-                range_ = Range(
-                    start=Position(line=start_line + idx, character=0),
-                    end=Position(line=start_line + idx, character=len(line) - 1),
-                )
-                text_edit = TextEdit(range=range_, new_text=data['edit'])
+            line_edits = line_edit(line, params)
+            for data in line_edits:
+                if data: # All line_edit functions must return false if they are unused otherwise follow the schema
+                    assert data.__class__ == LineItem, "You're line edit function must return either a valid LineEdit or bool: False"
+                    range_ = Range(
+                        start=Position(line=start_line + idx, character=0),
+                        end=Position(line=start_line + idx, character=len(line) - 1),
+                    )
+                    text_edit = TextEdit(range=range_, new_text=data['edit'])
 
-                action = lsp_types.CodeAction(
-                    title=data['message'],
-                    kind=lsp_types.CodeActionKind.RefactorInline,
-                    edit=lsp_types.WorkspaceEdit(changes={document_uri: [text_edit]}),
-                )
-                items.append(action)
+                    action = lsp_types.CodeAction(
+                        title=data['message'],
+                        diagnostics=data['diagnostic'],
+                        kind=lsp_types.CodeActionKind.QuickFix,
+                        edit=lsp_types.WorkspaceEdit(changes={document_uri: [text_edit]}),
+                    )
+                    items.append(action)
 
         return items
 
@@ -130,7 +134,7 @@ class Completion:
 
         @server.feature(lsp_types.TEXT_DOCUMENT_COMPLETION, lsp_types.CompletionOptions(trigger_characters=trigger_characters))
         async def check_all(params: lsp_types.CompletionParams):
-            
+        
             document_uri = params.text_document.uri
             if ".codex" in document_uri or ".scripture" in document_uri:
                 document = server.workspace.get_document(document_uri)
@@ -140,7 +144,7 @@ class Completion:
                         end=Position(line=params.position.line, character=params.position.character + 5) # Adjust the range as needed
                     ),
                     new_text=f"{item['edit']}"
-                )) for item in [completion_function(lines=document.lines, current_line=params.position.line) for completion_function in self.completion_functions] if item]
+                )) for item in [completion_function(lines=document.lines, current_line=params.position.line, params=params) for completion_function in self.completion_functions] if item]
 
                 return lsp_types.CompletionList(
                     is_incomplete=False,
