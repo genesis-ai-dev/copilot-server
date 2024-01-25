@@ -1,256 +1,73 @@
-# Copilot Server
-This VSCode extension provides a Language Server written in Python. It includes code actions that can suggest edits and provide autocompletion for text documents within the VSCode environment. Lots more will added on top of this, but for a start this seems helpful.
-## Install needed extensions:
-1. Install Pylance and Python from the Microsoft vscode extension store.
-2. Install `scripture-language-support` also from the extension store.
-3. Intalling the `codex-editor` extension (this will take a bit more effort).
+# Language Server Protocol Extension with Python and VSCode
 
-First, clone the repo `git clone https://github.com/genesis-ai-dev/codex-editor` and cd to that directory. Next, run `npm install`, `npm run compile` and `vsce package` in that order (ignore the warnings for `vsce`). If it is not yet installed, run `npm install -g vsce`.
+This README will guide you through the process of using the `ServerFunctions` class to extend the functionality of a Language Server Protocol (LSP) implementation using Python and Visual Studio Code (VSCode). The `ServerFunctions` class provides a way to add custom completion, diagnostic, and action features to your language server.
 
-This will create a `codex-editor.vsix` file. To add this as an extension in vscode, run `code --install-extension codex-editor.vsix` or open the extensions tab in vscode, select the three dots in the top right corner and click `Install from VSIX`.
+## Prerequisites
 
-## Development Setup
+Before you begin, ensure you have the following installed:
 
-To contribute to this extension, clone the repository, and ensure you have the necessary dependencies installed:
+- Python 3.7 or higher
+- Visual Studio Code
+- Install `scripture-language-support` from the extension store
 
-1. Ensure you have all required extensions.
-2. Clone this repo:
-```bash
-git clone https://github.com/genesis-ai-dev/copilot-server.git
-```
-2. Install the required Python packages:
+## How it works:
+1. First, you need to create an instance of `LanguageServer` from the `pygls` package:
 
-```bash
-pip install -r requirements.txt
-```
+    ```python
+    from pygls.server import LanguageServer
 
-3. Implement additional checks or completion functions as needed.
-4. Add your functions to the respective `Ideas` or `Completion` class instances.
+    server = LanguageServer("your-language-server-name", "your-version")
+    ```
 
-## Documentation
+2. Then, create an instance of `ServerFunctions` by providing the `server` object and a path to store project data (this is relative to the workspace):
 
-The `base_actions` module provides two classes, `Ideas` and `Completion`, that can be used to handle language-related features in a Language Server.
+    ```python
+    from your_module import ServerFunctions
 
-### `Ideas` Class
+    server_functions = ServerFunctions(server=server, data_path='/path_to_project_data')
+    ```
 
-The `Ideas` class is used to generate a list of code actions based on line edits. It takes the following parameters:
+## Adding Custom Server Functions
 
-- `server` (LanguageServer): The `LanguageServer` instance to handle language-related features.
-- `line_edits` (list[Callable]): List of functions to suggest edits for each line in a range.
-- `kind` (CodeActionKind, optional): The kind of code action. Default is `CodeActionKind.RefactorInline`.
+### Implementing a Skeleton Class
 
-#### Methods
-
-##### `__init__(self, server: LanguageServer, line_edits: list[Callable], kind=CodeActionKind.RefactorInline)`
-
-Initializes an `Ideas` object.
-
-Parameters:
-- `server` (LanguageServer): The `LanguageServer` instance to handle language-related features.
-- `line_edits` (list[Callable]): List of functions to suggest edits for each line in a range.
-- `kind` (CodeActionKind, optional): The kind of code action. Default is `CodeActionKind.RefactorInline`.
-
-Returns:
-None
-
-##### `idea(self, params: CodeActionParams, line_edit: Callable)`
-
-Generates a list of code actions based on line edits.
-
-Parameters:
-- `params` (CodeActionParams): The parameters containing information about the code action request.
-- `line_edit` (Callable): The function to suggest edits for each line in a range.
-
-Returns:
-List[CodeAction]: The list of code action items.
-
-##### `check_all(params: CodeAction)`
-
-Callback function for the text document code action feature.
-
-Parameters:
-- `params` (CodeAction): The parameters containing information about the code action request.
-
-Returns:
-List[CodeAction]: The list of code action items.
-
-### `Completion` Class
-
-The `Completion` class is used to handle text document completion using a list of completion functions. It takes the following parameters:
-
-- `server` (LanguageServer): A `pygls` server instance.
-- `completion_functions` (list[Callable]): A list of completion functions to use for generating completions.
-- `trigger_characters` (list[str], optional): A list of characters that trigger completion. Default is `[' ']`.
-
-#### Methods
-
-##### `__init__(self, server, completion_functions, trigger_characters=[' '])`
-
-Class to handle text document completion using a list of completion functions.
-
-Parameters:
-- `server` (LanguageServer): A `pygls` server instance.
-- `completion_functions` (list[Callable]): A list of completion functions to use for generating completions.
-- `trigger_characters` (list[str], optional): A list of characters that trigger completion. Default is `[' ']`.
-
-Returns:
-None
-
-##### `check_all(params: CompletionParams)`
-
-Callback function for the text document completion feature.
-
-Parameters:
-- `params` (CompletionParams): The parameters containing information about the completion request.
-
-Returns:
-CompletionList: The list of completion items.
-
-### Usage Example (from servers/server.py)
+Create a skeleton class that will hold the logic for your completion, diagnostic, and action handlers:
 
 ```python
-from typing import Union
-from pygls.server import LanguageServer
-from lsprotocol.types import Position, DidCloseTextDocumentParams, TEXT_DOCUMENT_DID_CLOSE
-import base_actions
-import embedding_tools as emb
-import urllib.parse
-import re
 
-is_embedding = ""
-last_result = ""
-server = LanguageServer("code-action-server", "v0.1")
-database = None
+def my_completion_handler(server, params, range, sf):
+    # Implement your completion logic here
+    pass
 
+def my_diagnostic_handler(server, params, sf):
+    # Implement your diagnostic logic here
+    pass
 
-def is_bible_verse(reference):
-    # Define a regex pattern for Bible verse references
-    pattern = re.compile(r'^\d*[A-Za-z]+\s\d+:\d+')
-
-    # Check if the reference matches the pattern
-    return bool(pattern.match(reference))
-
-
-def uri_to_filepath(uri):
-    # Decode the URL
-    decoded_url = urllib.parse.unquote(uri)
-
-    # Remove the scheme and the first slash if present
-    if decoded_url.startswith('vscode-notebook-cell:/'):
-        decoded_url = decoded_url[len('vscode-notebook-cell:/'):]
-
-    # Remove the first slash if present
-    if decoded_url.startswith('/'):
-        decoded_url = decoded_url[1:]
-
-    return decoded_url.split("#")[0]
-
-
-def check2(text: str) -> Union[dict, bool]:
-    upper_text = text.upper()
-    if upper_text != text:
-        return base_actions.LineItem(message='The text should be in all caps', edit=upper_text)
-    return False
-
-
-def completion1(lines: list[str], current_line: int):
-    if lines[current_line].strip().endswith("The"):
-        return base_actions.LineItem(message='test', edit='test')
-    return False
-
-
-def diagnotic1(lines: list[str]):
-    diagnostics = []
-    for line in lines:
-        summary = analyze.process(string=line).summary_list_of_issues()
-        if summary:
-            diagnostics.append(base_actions.LineItem(
-                message=", ".join(summary),
-                edit=None,
-                source='Wildebeest',
-                start=Position(line=lines.index(line), character=0),
-                end=Position(line=lines.index(line), character=len(line))
-            ))
-    return diagnostics if diagnostics else False
-
-
-def embed_document(params):
-    global database
-    db_path = server.workspace.root_path + "/" + "database"
-    path = params[0]['fsPath']
-    if ".codex" in path:
-        if not database:
-            database = emb.DataBase(db_path)
-        server.show_message(message="Embedding document.")
-        database.upsert_codex_file(path=path)
-        server.show_message(
-            message=f"The Codex file '{path}' has been upserted into 'database'")
-    else:
-        server.show_message(message="Current file must be .codex")
-
-
-@server.feature(TEXT_DOCUMENT_DID_CLOSE)
-async def on_close(ls, params: DidCloseTextDocumentParams):
-    global is_embedding
-    path = uri_to_filepath(params.text_document.uri)
-
-    if path != is_embedding:  # in case it fires multiple times
-        embed_document([{'fsPath': path}])
-        is_embedding = path
-        server.show_message("closed file")
-
-
-def embed_document_command(params):
-    return embed_document(params)
-
-
-def embed_idea(query: str):
-    global database, last_result
-    db_path = server.workspace.root_path + "/" + "database"
-    if not database:
-        server.show_message(
-            message="NLP features are loading, this may take a moment.")
-        database = emb.DataBase(db_path)
-        server.show_message(message="NLP features have loaded.")
-    if not is_bible_verse(query):
-        result = database.search(query, limit=1)
-
-        if result:
-            result = result[0]['text']
-            line_edit = base_actions.LineItem(
-                message=str(result), edit=result)
-            last_result = line_edit
-            return line_edit
-    return False
-
-
-server.command("pygls.server.EmbedDocument")(embed_document_command)
-
-base_actions.Ideas(server, line_edits=[embed_idea])
-base_actions.Completion(server, completion_functions=[completion1])
-base_actions.Diagnostics(server, diagnostic_functions=[diagnotic1])
-
-if __name__ == "__main__":
-    print('running:')
-    server.start_io()
-
+def my_action_handler(server, params, range, sf):
+    # Implement your action logic here
+    pass
 ```
 
-In the above example, the `Ideas` class is used to suggest code actions based on line edits. The `check1` and `check2` functions are provided as line edit functions. The `Completion` class is used to handle text document completion, and the `completion1` function is provided as the completion function.
+### Registering Handlers
 
-## Running the Language Server
+Register your feature handlers with the `ServerFunctions` instance:
 
-To run the vscode extiontion, **make sure you are in the correct workspace**, and then press `fn+f5` (or whatever is used on your OS).
+```python
+# Instantiate your custom feature class
+import custom_features
 
-The server should start up, if not most errors seem to come from accidentally being in the wrong workspace (this is easy to accidentally do as the extention will open its own vscode instance which will look similar to the one you start in).
+# Register completion, diagnostic, and action handlers
+server_functions.add_completion(custom_features.my_completion_handler)
+server_functions.add_diagnostic(custom_features.my_diagnostic_handler)
+server_functions.add_action(custom_features.my_action_handler)
+```
 
-## TODO:
-(no specific order)
-- Add Wildebeest (starting)
-- `.codex` and `.scripture` support etc... (mostly done, but each function should define which it applies to)
-- Extend language server beyond autocomplete and code actions...
+### Starting the Server
 
-- Look into [pygls async usage](https://pygls.readthedocs.io/en/v0.11.2/pages/advanced_usage.html#asynchronous-functions-coroutines) and [pygls threading](https://pygls.readthedocs.io/en/v0.11.2/pages/advanced_usage.html#threaded-functions) where they might be helpful to make the experience smoother (e.g waiting for an LLM to generate a token shouldn't block the rest of the server...)
+After registering all your handlers, you must start the server functions and then start the language server:
 
-- Linguistic anomaly detection...
-- Add more to the TODO...
+```python
+if __name__ == "__main__":
+    server_functions.start()
+    server.start_io()
+```

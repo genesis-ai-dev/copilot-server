@@ -34,7 +34,12 @@
       {
         "command": "pygls.server.EmbedDocument",
         "title": "Embed Document",
-        "category": "pygks"
+        "category": "pygls"
+      },
+      {
+        "command": "pygls.server.add_dictionary",
+        "title": "Add to Dictionary",
+        "category": "pygls"
       }
     ],
     "keybindings":[
