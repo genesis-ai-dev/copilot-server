@@ -4,7 +4,7 @@ from lsprotocol.types import (Range, Position, TextEdit, DiagnosticSeverity,
                               TEXT_DOCUMENT_DID_CLOSE, DidCloseTextDocumentParams, DidOpenTextDocumentParams, TEXT_DOCUMENT_DID_OPEN)
 
 import lsprotocol.types as lsp_types
-
+import time
 
 class ServerFunctions:
     def __init__(self, server: LanguageServer, data_path: str):
@@ -21,7 +21,7 @@ class ServerFunctions:
         self.diagnostic = None
         self.action = None
         self.data_path = data_path 
-        self.last_closed = None
+        self.last_closed = time.time() # yes, none in quotes is intentional
     
     def add_diagnostic(self, function: Callable):#, #trigger_characters: List):
         self.diagnostic_functions.append((function, None))
@@ -49,7 +49,6 @@ class ServerFunctions:
             items = []
             document_uri = params.text_document.uri
             document = self.server.workspace.get_document(document_uri)
-
             start_line = params.range.start.line
             end_line = params.range.end.line
 
@@ -95,16 +94,13 @@ class ServerFunctions:
         
         @self.server.feature(TEXT_DOCUMENT_DID_CLOSE)
         def on_close(ls, params: DidCloseTextDocumentParams):
-            if params.text_document.uri == self.last_closed:
-                return
-            else:
-                self.last_closed = params.text_document.uri
-            for function in self.close_functions:
-                function(ls, params, self)
+            if time.time() - self.last_closed > 10: # fix bug where pygls calls close many times
+                self.last_closed = time.time()
+                for function in self.close_functions:
+                    function(ls, params, self)
         
         @self.server.feature(TEXT_DOCUMENT_DID_OPEN)
         def on_open(ls, params: DidOpenTextDocumentParams):
-            self.last_closed = None
             for function in self.open_functions:
                 function(ls, params, self)
 

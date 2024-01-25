@@ -76,7 +76,7 @@ class SpellCheck:
         ]
 
         # Adjust the threshold based on word length
-        threshold_multiplier = 0.05  # You can adjust this value based on your needs
+        threshold_multiplier = 0.08  # You can adjust this value based on your needs
         possibilities = [
             (word, edit_distance) for word, edit_distance in possibilities
             if edit_distance <= threshold_multiplier * len(word)

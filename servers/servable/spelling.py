@@ -2,7 +2,7 @@ from tools.spell_check import Dictionary, SpellCheck
 from tools.ls_tools import ServerFunctions
 from lsprotocol.types import (DocumentDiagnosticParams, CompletionParams, 
     CodeActionParams, Range, CompletionItem, CompletionItemKind, 
-    TextEdit, Position, Diagnostic, DiagnosticOptions, CodeAction, WorkspaceEdit, CodeActionKind, Command, DiagnosticSeverity)
+    TextEdit, Position, Diagnostic, DidCloseTextDocumentParams, CodeAction, WorkspaceEdit, CodeActionKind, Command, DiagnosticSeverity)
 
 from pygls.server import LanguageServer
 from typing import List
@@ -116,7 +116,3 @@ class ServableSpelling:
     def initialize(self, params, server: LanguageServer, sf):
         self.dictionary = Dictionary(self.sf.data_path)
         self.spell_check = SpellCheck(dictionary=self.dictionary, relative_checking=self.relative_checking)
-    
-    def on_close_add_all():
-        #TODO
-        pass
