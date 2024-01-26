@@ -50,7 +50,7 @@ let logger: vscode.LogOutputChannel
  * Called when vscode first activates the extension
  */
 export async function activate(context: vscode.ExtensionContext) {
-   
+
     logger = vscode.window.createOutputChannel('pygls', { log: true })
     logger.info("Extension activated.")
     logger.info(`extension path ${context.extensionPath}`);
@@ -126,7 +126,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 
 
-   
+
 }
 
 
@@ -178,7 +178,7 @@ async function startLangServer(context: vscode.ExtensionContext) {
         args: [...pythonCommand.slice(1), full_path.fsPath],
         options: { cwd },
     };
-    
+
 
     client = new LanguageClient('pygls', serverOptions, getClientOptions());
     const promises = [client.start()]
@@ -234,7 +234,7 @@ function getClientOptions(): LanguageClientOptions {
         documentSelector: [
             {
                 pattern: '**/*.codex'
-            }, 
+            },
             {
                 pattern: '**/*.scripture'
             },
@@ -242,10 +242,10 @@ function getClientOptions(): LanguageClientOptions {
                 schema: "file",
                 language: "plaintext5"
             }
-          ],
+        ],
         outputChannel: logger,
         connectionOptions: {
-            maxRestartCount: 0 // don't restart on server failure.
+            maxRestartCount: 3 // don't restart on server failure.
         },
     };
     logger.info(`client options: ${JSON.stringify(options, undefined, 2)}`)
@@ -304,7 +304,7 @@ async function executeServerCommand() {
     logger.info(`executing command: '${commandName}'`)
 
 
-    const result = await vscode.commands.executeCommand(commandName,  vscode.window.activeTextEditor?.document.uri)
+    const result = await vscode.commands.executeCommand(commandName, vscode.window.activeTextEditor?.document.uri)
     logger.info(`${commandName} result: ${JSON.stringify(result, undefined, 2)}`)
 }
 
