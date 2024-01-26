@@ -239,15 +239,9 @@ function getClientOptions(): LanguageClientOptions {
             },
             {
                 schema: "file",
-<<<<<<< HEAD
                 language: "plaintext"
             },
           ],
-=======
-                language: "plaintext5"
-            }
-        ],
->>>>>>> 655101aa57dcf749465f5830b34db69a371f44f3
         outputChannel: logger,
         connectionOptions: {
             maxRestartCount: 3 // don't restart on server failure.
