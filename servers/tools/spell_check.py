@@ -107,3 +107,5 @@ if __name__ == "__main__":
     d = Dictionary(path)
     s = SpellCheck(d, True)
     print(s.complete('comp'))
+
+

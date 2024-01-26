@@ -179,7 +179,7 @@ async function startLangServer(context: vscode.ExtensionContext) {
         options: { cwd },
     };
     
-
+    
     client = new LanguageClient('pygls', serverOptions, getClientOptions());
     const promises = [client.start()]
 
@@ -240,12 +240,12 @@ function getClientOptions(): LanguageClientOptions {
             },
             {
                 schema: "file",
-                language: "plaintext5"
-            }
+                language: "plaintext"
+            },
           ],
         outputChannel: logger,
         connectionOptions: {
-            maxRestartCount: 0 // don't restart on server failure.
+            maxRestartCount: 3 // don't restart on server failure.
         },
     };
     logger.info(`client options: ${JSON.stringify(options, undefined, 2)}`)

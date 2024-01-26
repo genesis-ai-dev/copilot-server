@@ -9,16 +9,15 @@ try:
     from servable.servable_wb import wb_line_diagnostic
     from servable.servable_embedding import ServableEmbedding
 except ImportError:
+
     script_directory = os.path.dirname(os.path.abspath(__file__))
     requirements_file = os.path.join(script_directory, "requirements.txt")
     subprocess.check_call(["pip", "install", "--break-system-packages", "-r", requirements_file])
-    from pygls.server import LanguageServer
-    from tools.ls_tools import ServerFunctions
-    from servable.spelling import ServableSpelling
-    from servable.servable_wb import wb_line_diagnostic
-    from servable.servable_embedding import ServableEmbedding   
+    
+    exit()
    
 server = LanguageServer("code-action-server", "v0.1")
+
 
 server_functions = ServerFunctions(server=server, data_path='/project_data')
 spelling = ServableSpelling(sf=server_functions, relative_checking=True)

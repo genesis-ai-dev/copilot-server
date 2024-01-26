@@ -6,6 +6,8 @@ from lsprotocol.types import (Range, Position, TextEdit, DiagnosticSeverity,
 import lsprotocol.types as lsp_types
 import time
 
+
+
 class ServerFunctions:
     def __init__(self, server: LanguageServer, data_path: str):
         self.server = server

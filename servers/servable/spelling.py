@@ -23,15 +23,18 @@ class ServableSpelling:
         self.sf.initialize_functions.append(self.initialize)
 
     def spell_completion(self, server: LanguageServer, params: CompletionParams, range: Range, sf: ServerFunctions) -> List:
-        document_uri = params.text_document.uri
-        document = server.workspace.get_document(document_uri)
-        line = document.lines[params.position.line]
-        word = line.strip().split(" ")[-1]
-        completions = self.spell_check.complete(word=word)
-        return [CompletionItem(
-            label=word+completion,
-            text_edit=TextEdit(range=range, new_text=completion),
-            ) for completion in completions]
+        try:
+            document_uri = params.text_document.uri
+            document = server.workspace.get_document(document_uri)
+            line = document.lines[params.position.line]
+            word = line.strip().split(" ")[-1]
+            completions = self.spell_check.complete(word=word)
+            return [CompletionItem(
+                label=word+completion,
+                text_edit=TextEdit(range=range, new_text=completion),
+                ) for completion in completions]
+        except IndexError:
+            return []
 
     def spell_diagnostic(self, ls, params: DocumentDiagnosticParams, sf: ServerFunctions):
         diagnostics = []
@@ -76,7 +79,10 @@ class ServableSpelling:
                 start_character = diagnostic.range.start.character
                 end_character = diagnostic.range.end.character
                 word = document.lines[start_line][start_character:end_character]
-                corrections = self.spell_check.check(word)
+                try:
+                    corrections = self.spell_check.check(word)
+                except IndexError:
+                    corrections = []
                 if is_bible_ref(document.lines[start_line]):
                     return []
                 for correction in corrections:
