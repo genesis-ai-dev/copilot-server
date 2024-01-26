@@ -128,3 +128,9 @@ class DataBase:
         results = self.embeddings.search(query, limit)
         results = [result for result in results if result['score'] > .1]
         return results
+
+if __name__ == "__main__":
+    database = DataBase('db3')
+    database.upsert_codex_file('C:\\Users\\danie\\example_workspace\\drafts\\Bible\\1CH.codex')
+    print(database.search('dog', limit=1900))
+    database.save()
