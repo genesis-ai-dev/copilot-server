@@ -1,6 +1,6 @@
 {
-  "name": "pygls-playground",
-  "description": "Extension for experimenting with pygls powered language servers",
+  "name": "copilot-server",
+  "description": "Scripture language server",
   "author": "Open Law Library",
   "repository": "https://github.com/openlawlibrary/pygls",
   "license": "Apache-2.0",
@@ -100,7 +100,7 @@
           "pygls.server.launchScript": {
             "scope": "resource",
             "type": "string",
-            "default": "json_server.py",
+            "default": "server.py",
             "description": "The python script to run when launching the server.",
             "markdownDescription": "The python script to run when launching the server.\n Relative to #pygls.server.cwd#"
           },
