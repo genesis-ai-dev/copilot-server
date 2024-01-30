@@ -1,15 +1,15 @@
 from typing import Callable, List
-from pygls.server import LanguageServer
 from lsprotocol.types import (Range, Position, TextEdit, DiagnosticSeverity, 
                               TEXT_DOCUMENT_DID_CLOSE, DidCloseTextDocumentParams, DidOpenTextDocumentParams, TEXT_DOCUMENT_DID_OPEN)
 
 import lsprotocol.types as lsp_types
 import time
+import json
 
 
 
 class ServerFunctions:
-    def __init__(self, server: LanguageServer, data_path: str):
+    def __init__(self, server, data_path: str):
         self.server = server
         self.completion_functions = []
         self.diagnostic_functions = []
@@ -17,7 +17,6 @@ class ServerFunctions:
         self.initialize_functions = []
         self.close_functions = []
         self.open_functions = []
-
 
         self.completion = None
         self.diagnostic = None
@@ -39,6 +38,9 @@ class ServerFunctions:
     
     def add_open_function(self, function: Callable):
         self.open_functions.append(function)
+        
+    def add_initialize_function(self, function: Callable):
+        self.initialize_functions.append(function)
 
 
 

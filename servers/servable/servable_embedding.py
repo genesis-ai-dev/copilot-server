@@ -1,11 +1,11 @@
 import urllib
 from lsprotocol.types import DidCloseTextDocumentParams
+from extended_language_server import ExtendedLanguageServer
 from tools.ls_tools import ServerFunctions
 from tools.embedding_tools import DataBase
 from lsprotocol.types import (DocumentDiagnosticParams, CompletionParams, 
     CodeActionParams, Range, CompletionItem, CompletionItemKind, 
     TextEdit, Position, Diagnostic, DiagnosticOptions, CodeAction, WorkspaceEdit, CodeActionKind, Command, DiagnosticSeverity)
-from pygls.server import LanguageServer
 from typing import List
 import time
 from servable.spelling import is_bible_ref
@@ -45,7 +45,7 @@ class ServableEmbedding:
         self.embed_document([{'fsPath': path}], fs)
         ls.show_message("Closed file")
     
-    def embed_completion(self, server: LanguageServer, params: CompletionParams, range: Range, sf: ServerFunctions) -> List:
+    def embed_completion(self, server: ExtendedLanguageServer, params: CompletionParams, range: Range, sf: ServerFunctions) -> List:
         document_uri = params.text_document.uri
         document = server.workspace.get_document(document_uri)
         line = document.lines[params.position.line].strip()

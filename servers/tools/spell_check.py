@@ -11,24 +11,35 @@ translator = str.maketrans('', '', string.punctuation)
 def remove_punctuation(text):
     return text.translate(translator).strip()
 class Dictionary:
-    def __init__(self, project_path) -> None:
-        self.path = project_path + '/dictionary/dictionary.json' # TODO: #4 Use all .dictionary files in drafts directory
-        self.dictionary = self.load_dictionary()  # load the .dictionary (json file)
+    def __init__(self, project_path, language) -> None:
+        self.base_path = project_path + '/drafts/'  # Base path to drafts directory
+        self.language = language  # Target language for the dictionary
+        self.path = self.base_path + language + '/'  # Path to the specific language directory
+        self.dictionary = self.load_dictionaries()  # load all .dictionary (json files) for the language
     
-    def load_dictionary(self) -> Dict:
-        try:
-            with open(self.path, 'r') as file:
-                data = json.load(file)
-                return data
-        except FileNotFoundError:
+    def load_dictionaries(self) -> Dict:
+        combined_dictionary = {"entries": []}
+        # Check if the language directory exists
+        if not os.path.exists(self.path):
             # Create the directory if it does not exist
-            os.makedirs(os.path.dirname(self.path), exist_ok=True)
-
-            # Create the dictionary and write it to the file
-            new_dict = {"entries": []}
-            with open(self.path, 'w') as file:
-                json.dump(new_dict, file)
-            return new_dict
+            os.makedirs(self.path, exist_ok=True)
+        else:
+            # Load all .dictionary files in the directory
+            for filename in os.listdir(self.path):
+                if filename.endswith('.dictionary'):
+                    file_path = os.path.join(self.path, filename)
+                    try:
+                        with open(file_path, 'r') as file:
+                            data = json.load(file)
+                            combined_dictionary["entries"].extend(data["entries"])
+                    except FileNotFoundError:
+                        pass  # If a file is not found, skip it
+        # If no dictionaries were found or loaded, create a default empty dictionary file
+        if len(combined_dictionary["entries"]) == 0:
+            default_dict_path = os.path.join(self.path, 'default.dictionary')
+            with open(default_dict_path, 'w') as file:
+                json.dump({"entries": []}, file)
+        return combined_dictionary
 
     def save_dictionary(self) -> None:
         with open(self.path, 'w') as file:

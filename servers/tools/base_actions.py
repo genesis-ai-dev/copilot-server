@@ -1,8 +1,8 @@
 from typing import Callable
-from pygls.server import LanguageServer
 from lsprotocol.types import Range, Position, TextEdit
 
 import lsprotocol.types as lsp_types
+from extended_language_server import ExtendedLanguageServer
 
 
 
@@ -35,12 +35,12 @@ class LineItem:
 
 
 class Ideas:
-    def __init__(self, server: LanguageServer, line_edits: list[Callable], kind=lsp_types.CodeActionKind.RefactorInline):
+    def __init__(self, server: ExtendedLanguageServer, line_edits: list[Callable], kind=lsp_types.CodeActionKind.RefactorInline):
         """
         Initializes an Ideas object.
 
         Parameters:
-        - server (LanguageServer): The LanguageServer instance to handle language-related features.
+        - server (ExtendedLanguageServer): The ExtendedLanguageServer instance to handle language-related features.
         - line_edits (list[Callable]): List of functions to suggest edits for each line in a range.
         - kind (CodeActionKind, optional): The kind of code action. Default is CodeActionKind.RefactorInline.
 
@@ -123,7 +123,7 @@ class Completion:
         Class to handle text document completion using a list of completion functions.
         
         :param server: A pygls server instance
-        :type server: LanguageServer
+        :type server: ExtendedLanguageServer
         :param completion_functions: A list of completion functions to use for generating completions.
         :type completion_functions: List[Callable]
         """
@@ -160,7 +160,7 @@ class Diagnostics:
         Class to handle text document diagnostic using a list of completion functions.
 
         :param server: A pygls server instance
-        :type server: LanguageServer
+        :type server: ExtendedLanguageServer
         :param diagnostic_functions: A list of completion functions to use for generating completions.
         :type diagnostic_functions: List[Callable]
         """

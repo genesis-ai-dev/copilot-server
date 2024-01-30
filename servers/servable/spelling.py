@@ -1,10 +1,10 @@
+from extended_language_server import ExtendedLanguageServer
 from tools.spell_check import Dictionary, SpellCheck
 from tools.ls_tools import ServerFunctions
 from lsprotocol.types import (DocumentDiagnosticParams, CompletionParams, 
     CodeActionParams, Range, CompletionItem, CompletionItemKind, 
     TextEdit, Position, Diagnostic, DidCloseTextDocumentParams, CodeAction, WorkspaceEdit, CodeActionKind, Command, DiagnosticSeverity)
 
-from pygls.server import LanguageServer
 from typing import List
 import re
 
@@ -22,7 +22,7 @@ class ServableSpelling:
         self.sf = sf
         self.sf.initialize_functions.append(self.initialize)
 
-    def spell_completion(self, server: LanguageServer, params: CompletionParams, range: Range, sf: ServerFunctions) -> List:
+    def spell_completion(self, server: ExtendedLanguageServer, params: CompletionParams, range: Range, sf: ServerFunctions) -> List:
         try:
             document_uri = params.text_document.uri
             document = server.workspace.get_document(document_uri)
@@ -64,7 +64,7 @@ class ServableSpelling:
 
         return diagnostics 
     
-    def spell_action(self, ls: LanguageServer, params: CodeActionParams, range: Range, sf: ServerFunctions) -> List[CodeAction]:
+    def spell_action(self, ls: ExtendedLanguageServer, params: CodeActionParams, range: Range, sf: ServerFunctions) -> List[CodeAction]:
         document_uri = params.text_document.uri
         document = ls.workspace.get_document(document_uri)
         diagnostics = params.context.diagnostics
@@ -119,6 +119,16 @@ class ServableSpelling:
             self.dictionary.define(word, level='verified')
         self.sf.server.show_message("Dictionary updated.")
 
-    def initialize(self, params, server: LanguageServer, sf):
-        self.dictionary = Dictionary(self.sf.data_path)
+    def initialize(self, params, server: ExtendedLanguageServer, sf):
+        # Retrieve all languages from server metadata
+        print(sf.server.metadata)
+        all_languages = sf.server.metadata['languages']
+        # Filter out the target language
+        target_languages = [language['tag'] for language in all_languages if language.projectStatus == 'target']
+        # FIXME: this is returning an empty array right now, or none, or something, because it's not parsing the metadata file as expected, but it's hard to log the error
+        if len(target_languages) == 0:
+            raise Exception("No target languages found.")
+        target_language = target_languages[0]
+        
+        self.dictionary = Dictionary(self.sf.data_path, language=target_language)
         self.spell_check = SpellCheck(dictionary=self.dictionary, relative_checking=self.relative_checking)
