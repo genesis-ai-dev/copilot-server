@@ -16,8 +16,7 @@ except ImportError:
     
     exit()
    
-server = LanguageServer("code-action-server", "v0.1")
-
+server = LanguageServer("code-action-server", "v0.1") # TODO: #1 Dynamically populate metadata from package.json?
 
 server_functions = ServerFunctions(server=server, data_path='/project_data')
 spelling = ServableSpelling(sf=server_functions, relative_checking=True)

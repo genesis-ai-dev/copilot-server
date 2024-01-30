@@ -12,7 +12,7 @@ def remove_punctuation(text):
     return text.translate(translator).strip()
 class Dictionary:
     def __init__(self, project_path) -> None:
-        self.path = project_path + '/dictionary/dictionary.json'
+        self.path = project_path + '/dictionary/dictionary.json' # TODO: #4 Use all .dictionary files in drafts directory
         self.dictionary = self.load_dictionary()  # load the .dictionary (json file)
     
     def load_dictionary(self) -> Dict:
@@ -53,7 +53,7 @@ class SpellCheck:
     def __init__(self, dictionary: Dictionary, relative_checking=False):
         self.dictionary = dictionary
         self.relative_checking = relative_checking
-        self.level_flag = 'verified auto' if relative_checking else 'verified'
+        self.level_flag = 'verified auto' if relative_checking else 'verified' # TODO: #3 use enum for level_flag
     
     def is_correction_needed(self, word: str) -> bool:
         word = word.lower()
@@ -70,7 +70,7 @@ class SpellCheck:
 
         entries = self.dictionary.dictionary['entries']
         possibilities = [
-            (entry['headWord'], edit_distance.distance(entry['headWord'], word) / len(entry['headWord']))
+            (entry['headWord'], edit_distance.distance(entry['headWord'], word) / len(entry['headWord']) if len(entry['headWord']) > 0 else 0)
             for entry in entries
             if entry['level'] in self.level_flag
         ]

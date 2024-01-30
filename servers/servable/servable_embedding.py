@@ -12,7 +12,7 @@ from servable.spelling import is_bible_ref
 
 def uri_to_filepath(uri):
     # Decode the URL
-    decoded_url = urllib.parse.unquote(uri)
+    decoded_url = urllib.parse.unquote(uri) # TODO: #5 need to make sure we are using the vscode api conventions to use the workspace-relative URI. See line 52 below
 
     # Remove the scheme and the first slash if present
     if decoded_url.startswith('vscode-notebook-cell:/'):
