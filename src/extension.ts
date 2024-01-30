@@ -232,16 +232,25 @@ function getClientOptions(): LanguageClientOptions {
     const options = {
         documentSelector: [
             {
+                language: 'scripture',
+                scheme: 'file',
                 pattern: '**/*.codex'
             },
             {
+                language: 'scripture',
+                scheme: 'file',
+                pattern: '**/*.bible'
+            },
+            {
+                language: 'scripture',
+                scheme: 'file',
                 pattern: '**/*.scripture'
             },
             {
                 schema: "file",
                 language: "plaintext"
             },
-          ],
+        ],
         outputChannel: logger,
         connectionOptions: {
             maxRestartCount: 3 // don't restart on server failure.

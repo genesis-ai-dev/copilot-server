@@ -57,7 +57,7 @@ class CodexReader:
         if marker_match:
             marker = marker_match.group(1)
             # Split the verses and keep the markers
-            parts = re.split(f'({marker} \d+:\d+)', scripture_text)
+            parts = re.split(f'({marker} \\d+:\\d+)', scripture_text)
             # Re-combine markers with verses
             verses = [parts[i] + parts[i + 1] for i in range(0, len(parts) - 1, 2)]
             if len(parts) % 2 != 0:
