@@ -8,6 +8,13 @@ from pygls.server import LanguageServer
 from typing import List
 import re
 
+from enum import Enum
+
+class SPELLING_MESSAGE(Enum):
+    TYPO = "❓🔤"
+    ADD_WORD = f"📖 ➕ '{{word}}'"
+    ADD_ALL_WORDS = "📖 ➕➕"
+
 def is_bible_ref(text):
     pattern = r'\b\d*\s*[A-Z]+\s\d+:\d+\b'
     match = re.search(pattern, text)
@@ -28,16 +35,19 @@ class ServableSpelling:
             document = server.workspace.get_document(document_uri)
             line = document.lines[params.position.line]
             word = line.strip().split(" ")[-1]
-            completions = self.spell_check.complete(word=word)
-            return [CompletionItem(
-                label=word+completion,
-                text_edit=TextEdit(range=range, new_text=completion),
-                ) for completion in completions]
+            if self.spell_check is not None:
+                completions = self.spell_check.complete(word=word)
+                return [CompletionItem(
+                    label=word+completion,
+                    text_edit=TextEdit(range=range, new_text=completion),
+                    ) for completion in completions]
+            else:
+                return []
         except IndexError:
             return []
 
-    def spell_diagnostic(self, ls, params: DocumentDiagnosticParams, sf: ServerFunctions):
-        diagnostics = []
+    def spell_diagnostic(self, ls: LanguageServer, params: DocumentDiagnosticParams, sf: ServerFunctions) -> List[Diagnostic]:
+        diagnostics: List[Diagnostic] = []
         document_uri = params.text_document.uri
         if ".codex" in document_uri or ".scripture" in document_uri:
             document = ls.workspace.get_document(document_uri)
@@ -50,18 +60,19 @@ class ServableSpelling:
             edit_window = 0
 
             for word in words:
-                check = self.spell_check.is_correction_needed(word)
-                if check:
+                if self.spell_check and self.spell_check.is_correction_needed(word):
                     start_char = edit_window
                     end_char = start_char + len(word)
                     
                     range = Range(start=Position(line=line_num, character=start_char),
                                 end=Position(line=line_num, character=end_char))
-                    diagnostics.append(Diagnostic(range=range, message='Potential Typo', severity=DiagnosticSeverity.Warning, source='Spell-Check'))
+                    diagnostics.append(Diagnostic(range=range, message=SPELLING_MESSAGE.TYPO.value, severity=DiagnosticSeverity.Warning, source='Spell-Check'))
                 
-                # Update edit_window based on cumulative character count
-                edit_window += len(word) + 1  # +1 for the space between words
-
+                # Add one if the next character is whitespace
+                if edit_window + len(word) < len(line) and line[edit_window + len(word)] == ' ':
+                    edit_window += len(word) + 1
+                else:
+                    edit_window += len(word)
         return diagnostics 
     
     def spell_action(self, ls: LanguageServer, params: CodeActionParams, range: Range, sf: ServerFunctions) -> List[CodeAction]:
@@ -73,7 +84,7 @@ class ServableSpelling:
         typo_diagnostics = []
         start_line = None
         for diagnostic in diagnostics:
-            if diagnostic.message == "Potential Typo":
+            if diagnostic.message == SPELLING_MESSAGE.TYPO.value:
                 typo_diagnostics.append(diagnostic)
                 start_line = diagnostic.range.start.line
                 start_character = diagnostic.range.start.character
@@ -89,7 +100,7 @@ class ServableSpelling:
                     edit = TextEdit(range=diagnostic.range, new_text=correction)
                     
                     action = CodeAction(
-                        title=f"Change '{word}' to '{correction}'",
+                        title=f"{word} → {correction}",
                         kind=CodeActionKind.QuickFix,
                         diagnostics=[diagnostic],
                         edit=WorkspaceEdit(changes={document_uri: [edit]}))
@@ -97,14 +108,15 @@ class ServableSpelling:
                     actions.append(action)
 
                 add_word_action = CodeAction(
-                    title=f"Add '{word}' to dictionary",
+                    title=SPELLING_MESSAGE.ADD_WORD.value.format(word=word),
                     kind=CodeActionKind.QuickFix,
                     diagnostics=[diagnostic],
                     command=Command('Add to Dictionary', command='pygls.server.add_dictionary', arguments=[[word]])
                 )
                 actions.append(add_word_action)
                 add_word_action = CodeAction(
-                            title=f"Add all to dictionary",
+                            # title=f'{SPELLING_MESSAGE.ADD_ALL_WORDS.value} ({len(typo_diagnostics)})', # FIXME: typo_diagnostics is not the right variable here. How can we count all the fixes? Can we inside this loop?
+                            title="Add all words",
                             kind=CodeActionKind.QuickFix,
                             diagnostics=[diagnostic],
                             command=Command('Add to Dictionary', command='pygls.server.add_dictionary', arguments=[document.lines[start_line].split(" ")])
