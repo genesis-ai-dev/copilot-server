@@ -42,9 +42,7 @@
         "category": "pygls"
       }
     ],
-    "keybindings":[
-
-    ],
+    "keybindings": [],
     "configuration": [
       {
         "type": "object",
@@ -77,8 +75,7 @@
             "scope": "resource",
             "type": "string",
             "description": "The workspace directory (for debugging)"
-          }
-          ,
+          },
           "pygls.server.debug": {
             "scope": "resource",
             "default": false,

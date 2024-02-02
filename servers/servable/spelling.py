@@ -12,8 +12,9 @@ from enum import Enum
 
 class SPELLING_MESSAGE(Enum):
     TYPO = "❓🔤"
-    ADD_WORD = f"📖 ➕ '{{word}}'"
-    ADD_ALL_WORDS = "📖 ➕➕"
+    ADD_WORD = f"'{{word}}' → 📖"
+    ADD_ALL_WORDS = f"Add all {{count}} 📖" # Not implemented yet
+    REPLACE_WORD = f"'{{word}}' → '{{correction}}'"
 
 def is_bible_ref(text):
     pattern = r'\b\d*\s*[A-Z]+\s\d+:\d+\b'
@@ -100,7 +101,7 @@ class ServableSpelling:
                     edit = TextEdit(range=diagnostic.range, new_text=correction)
                     
                     action = CodeAction(
-                        title=f"{word} → {correction}",
+                        title=SPELLING_MESSAGE.REPLACE_WORD.value.format(word=word, correction=correction),
                         kind=CodeActionKind.QuickFix,
                         diagnostics=[diagnostic],
                         edit=WorkspaceEdit(changes={document_uri: [edit]}))
