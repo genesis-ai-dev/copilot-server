@@ -106,5 +106,5 @@ class ServerFunctions:
             for function in self.open_functions:
                 function(ls, params, self)
 
-    def initialize(self, server, params, fs):            
+    def initialize(self, server, params, fs):        
         self.data_path = server.workspace.root_path + self.data_path

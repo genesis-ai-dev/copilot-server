@@ -5,14 +5,16 @@ except ImportError:
 import json
 import os
 from typing import List, Dict
+# from codex_types.types import Dictionary as DictionaryType
+# from codex_types.types import DictionaryEntry
 import string
 translator = str.maketrans('', '', string.punctuation)
 
 def remove_punctuation(text):
     return text.translate(translator).strip()
-class Dictionary:
+class Dictionary():
     def __init__(self, project_path) -> None:
-        self.path = project_path + '/dictionary/dictionary.json' # TODO: #4 Use all .dictionary files in drafts directory
+        self.path = project_path + '/project.dictionary' # TODO: #4 Use all .dictionary files in drafts directory
         self.dictionary = self.load_dictionary()  # load the .dictionary (json file)
     
     def load_dictionary(self) -> Dict:
@@ -36,9 +38,23 @@ class Dictionary:
 
     def define(self, word: str, level='unverified') -> None:
         word = remove_punctuation(word)
+        
         # Add a word if it does not already exist
         if not any(entry['headWord'] == word for entry in self.dictionary['entries']):
-            self.dictionary['entries'].append({'headWord': word, 'level': level})
+            new_entry = {
+                'headWord': word, 
+                'level': level, 
+                'id': str(uuid.uuid4()),
+                'definition': '',
+                'translationEquivalents': [],
+                'links': [],
+                'linkedEntries': [],
+                'metadata': {'extra': {}},
+                'notes': [],
+                'extra': {}
+            }
+            
+            self.dictionary['entries'].append(new_entry)
             self.save_dictionary()
 
     def remove(self, word: str) -> None:
