@@ -1,14 +1,13 @@
+from typing import List
+import re
+from enum import Enum
 from tools.spell_check import Dictionary, SpellCheck
 from tools.ls_tools import ServerFunctions
 from lsprotocol.types import (DocumentDiagnosticParams, CompletionParams, 
-    CodeActionParams, Range, CompletionItem, CompletionItemKind, 
-    TextEdit, Position, Diagnostic, DidCloseTextDocumentParams, CodeAction, WorkspaceEdit, CodeActionKind, Command, DiagnosticSeverity)
-
+    CodeActionParams, Range, CompletionItem, 
+    TextEdit, Position, Diagnostic, CodeAction, WorkspaceEdit, CodeActionKind, Command, DiagnosticSeverity)
 from pygls.server import LanguageServer
-from typing import List
-import re
 
-from enum import Enum
 
 class SPELLING_MESSAGE(Enum):
     TYPO = "❓🔤"
@@ -16,7 +15,10 @@ class SPELLING_MESSAGE(Enum):
     ADD_ALL_WORDS = f"Add all {{count}} 📖" # Not implemented yet
     REPLACE_WORD = f"'{{word}}' → '{{correction}}'"
 
-def is_bible_ref(text):
+def is_bible_ref(text: str)-> bool:
+    """
+    Does text contain a Bible refrence.
+    """
     pattern = r'\b\d*\s*[A-Z]+\s\d+:\d+\b'
     match = re.search(pattern, text)
     
@@ -54,9 +56,6 @@ class ServableSpelling:
             document = ls.workspace.get_document(document_uri)
         lines = document.lines
         for line_num, line in enumerate(lines):
-            if is_bible_ref(line):
-                continue
-            
             words = line.split(" ")
             edit_window = 0
 
@@ -129,7 +128,7 @@ class ServableSpelling:
     def add_dictionary(self, args):
         args = args[0]
         for word in args:
-            self.dictionary.define(word, level='verified')
+            self.dictionary.define(word)
         self.sf.server.show_message("Dictionary updated.")
 
     def initialize(self, params, server: LanguageServer, sf):
