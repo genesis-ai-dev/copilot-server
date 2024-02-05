@@ -5,6 +5,7 @@ except ImportError:
 import json
 import os
 from typing import List, Dict
+import uuid
 # from codex_types.types import Dictionary as DictionaryType
 # from codex_types.types import DictionaryEntry
 import string
